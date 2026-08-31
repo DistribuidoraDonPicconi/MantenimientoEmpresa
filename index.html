@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Vehículos</title>
+
+<!-- PWA: instalable en el celular -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16305c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vehículos DP">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+
+<!-- Genera imágenes (para el botón "Compartir" de las pestañas Vehículos y Movimientos) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Login con Google (botón / credencial) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<!-- Firebase (Auth + Firestore) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --azul-osc: #16305c;
+    --azul: #2a5cc9;
+    --azul-suave: #eef3fc;
+    --azul-borde: #d7e2f5;
+    --fondo: #f4f7fc;
+    --linea: #e7ecf5;
+    --verde: #1f8a4c;
+    --rojo: #c0392b;
+    --texto-tenue: #7c8aa3;
+    --app-max-width: 520px;
+  }
+  @media (min-width:900px){
+    main.grid-mode{
+      position:relative;
+      left:50%;
+      width:min(1800px, 96vw);
+      transform:translateX(-50%);
+    }
+    main.ancho-tabla{
+      position:relative;
+      left:50%;
+      width:min(780px, 94vw);
+      transform:translateX(-50%);
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--fondo);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#1a1f2b;
+  }
+  #app{
+    display:flex; flex-direction:column;
+    height:100vh; height:100dvh;
+    max-width:var(--app-max-width); margin:0 auto;
+    background:var(--fondo);
+    transition:max-width .2s ease;
+  }
+
+  /* Header */
+  header{ padding:18px 20px 4px; flex-shrink:0; }
+  header .top-row{ display:flex; align-items:flex-start; justify-content:space-between; }
+  header h1{ font-size:27px; margin:0; color:#111624; font-weight:800; letter-spacing:-0.4px; }
+  header .sub{ font-size:14px; color:var(--azul); font-weight:700; margin-top:4px; letter-spacing:0.2px; }
+  .icon-btn{
+    background:#fff; border:1px solid var(--azul-borde); padding:11px; cursor:pointer;
+    color:var(--azul); display:flex; align-items:center; justify-content:center;
+    border-radius:12px; box-shadow:0 1px 2px rgba(22,48,92,0.06);
+  }
+  .icon-btn:active{ background:var(--azul-suave); }
+  .icon-btn.hidden{ display:none; }
+  .icon-btn.active{ background:var(--azul); color:#fff; border-color:var(--azul); }
+  .icon-btn svg{ width:19px; height:19px; }
+  .icon-btn.spinning svg{ animation: spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* Pill tabs */
+  .pill-tabs{
+    display:flex; gap:4px;
+    background:#fff; border:1px solid var(--azul-borde);
+    border-radius:14px; padding:4px;
+    margin:14px 20px 0; flex-shrink:0;
+    box-shadow:0 1px 3px rgba(22,48,92,0.05);
+  }
+  .pill-tabs button{
+    flex:1; border:none; background:transparent; cursor:pointer;
+    padding:11px 8px; border-radius:11px;
+    font-size:15px; font-weight:700; color:var(--texto-tenue);
+    transition:background .15s, color .15s;
+  }
+  .pill-tabs button.active{
+    background:var(--azul); color:#fff;
+    box-shadow:0 2px 6px rgba(42,92,201,0.35);
+  }
+
+  /* Search */
+  .search-wrap{ padding:12px 20px 6px; flex-shrink:0; }
+  .search-wrap.hidden{ display:none; }
+  .search-wrap input{
+    width:100%; padding:11px 13px; border-radius:11px; border:1px solid var(--azul-borde);
+    background:#fff; font-size:16px; outline:none; color:#1a1f2b;
+  }
+  .search-wrap input:focus{ border-color:var(--azul); }
+  .search-wrap input::placeholder{ color:#a7b2c6; }
+
+  /* Content */
+  main{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 20px 24px; }
+  main.grid-mode{ display:flex; flex-direction:column; overflow:hidden; padding-bottom:12px; }
+  main.grid-mode .mov-table-wrap{ flex:1; min-height:0; display:flex; flex-direction:column; }
+
+  .state-msg{ padding:40px 20px; text-align:center; color:var(--texto-tenue); font-size:14px; }
+  .state-msg.error{ color:var(--rojo); }
+
+  /* Tabla Vehículos (lista maestra) */
+  .stock-table-wrap{
+    border:1px solid var(--linea); border-radius:14px; overflow:hidden;
+    background:#fff; box-shadow:0 1px 2px rgba(22,48,92,0.04);
+  }
+  .clientes-scroll{ overflow:auto; -webkit-overflow-scrolling:touch; }
+  table.clientes{ border-collapse:collapse; width:100%; min-width:460px; table-layout:fixed; }
+  table.clientes td{
+    padding:11px 12px; border-bottom:1px solid var(--linea); border-right:1px solid var(--linea);
+    vertical-align:middle; text-align:center;
+  }
+  table.clientes td:last-child{ border-right:none; }
+  table.clientes tr:last-child td{ border-bottom:none; }
+  table.clientes tr:nth-child(even){ background:#fafbfd; }
+  table.clientes tr.cliente-row{ cursor:pointer; }
+  table.clientes tr.cliente-row:active{ background:var(--azul-suave); }
+  table.clientes tr.cliente-row.selected td{ background:var(--azul-suave); }
+  table.clientes tr.cliente-row.selected td.nombre{ color:var(--azul-osc); }
+  table.clientes td.nombre{ font-size:15.5px; font-weight:700; color:#1a1f2b; text-align:center; }
+  table.clientes td.fecha{ font-size:13px; font-weight:700; color:var(--azul); width:112px; white-space:nowrap; }
+  table.clientes td.km{ font-size:14px; font-weight:700; color:#1a1f2b; width:110px; white-space:nowrap; }
+  table.clientes td.km.zero{ color:#9aa5ba; font-weight:600; }
+  table.clientes th{
+    text-align:center; font-size:12.5px; font-weight:800; color:var(--texto-tenue);
+    text-transform:uppercase; letter-spacing:0.3px;
+    padding:9px 12px; border-bottom:1.5px solid var(--linea); border-right:1px solid var(--linea);
+    background:#fafbfd;
+  }
+  table.clientes th:last-child{ border-right:none; }
+  table.clientes th.nombre{ text-align:center; }
+
+  /* Tabla Movimientos */
+  .mov-table-wrap{
+    border:1.5px solid var(--azul); border-radius:14px; overflow:hidden;
+    background:#fff; box-shadow:0 1px 3px rgba(22,48,92,0.08);
+  }
+  .mov-scroll{ overflow:auto; -webkit-overflow-scrolling:touch; }
+  table.mov{ border-collapse:separate; border-spacing:0; width:100%; min-width:1360px; }
+  table.mov th{
+    position:sticky; top:0; background:#fff; z-index:1;
+    text-align:center; font-size:13.5px; color:#1a1f2b; font-weight:800;
+    padding:10px 10px; border-bottom:2px solid var(--azul); white-space:nowrap;
+    border-right:1px solid var(--linea);
+    box-shadow:0 2px 4px rgba(22,48,92,0.15);
+  }
+  table.mov th:last-child{ border-right:none; }
+  table.mov td{
+    padding:10px 10px; font-size:14px; white-space:nowrap; text-align:center;
+    border-bottom:1px solid var(--linea); border-right:1px solid var(--linea);
+    color:#1a1f2b;
+  }
+  table.mov td:last-child{ border-right:none; }
+  table.mov td.fecha{ color:var(--azul); font-weight:700; }
+  table.mov td.cliente{ font-weight:700; }
+  table.mov td.usuario{ font-size:12.5px; color:var(--texto-tenue); font-weight:600; }
+  table.mov td.notas{ font-size:12.5px; color:var(--texto-tenue); max-width:220px; white-space:normal; word-break:break-word; }
+  table.mov td.concepto{ font-size:13px; max-width:180px; white-space:normal; word-break:break-word; }
+  table.mov td.km{ text-align:center; font-weight:700; }
+  table.mov td.km.zero{ color:#c3cad9; font-weight:500; }
+  table.mov tbody tr:nth-child(even){ background:#fafbfd; }
+  table.mov tbody tr.mov-row{ cursor:pointer; }
+  table.mov tbody tr.mov-row:active{ background:var(--azul-suave); }
+  table.mov tbody tr.mov-row.selected td{ background:var(--azul-suave); }
+  table.mov tbody tr.mov-row.selected td.fecha{ color:var(--azul-osc); }
+
+  /* Modal de confirmación (eliminar / cerrar sesión) */
+  #confirm-eliminar-modal, #confirm-logout-modal{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(17,22,36,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  #confirm-eliminar-modal.hidden, #confirm-logout-modal.hidden{ display:none; }
+  .confirm-box{
+    width:100%; max-width:320px;
+    background:#fff; border-radius:18px;
+    padding:26px 22px 20px;
+    text-align:center;
+    box-shadow:0 12px 30px rgba(17,22,36,0.25);
+  }
+  .confirm-box .confirm-icon{
+    width:52px; height:52px; border-radius:50%;
+    background:#fdecea; color:var(--rojo);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 14px;
+  }
+  .confirm-box .confirm-icon svg{ width:24px; height:24px; }
+  .confirm-box h3{ font-size:17px; margin:0 0 6px; color:#111624; font-weight:800; }
+  .confirm-box p{ font-size:14px; color:var(--texto-tenue); margin:0 0 20px; line-height:1.4; }
+  .confirm-box .confirm-actions{ display:flex; gap:10px; }
+  .confirm-box button{ flex:1; padding:12px; border-radius:12px; border:none; font-size:15px; font-weight:700; cursor:pointer; }
+  .confirm-box .btn-cancelar{ background:var(--azul-suave); color:var(--azul-osc); }
+  .confirm-box .btn-cancelar:active{ background:var(--azul-borde); }
+  .confirm-box .btn-confirmar{ background:var(--rojo); color:#fff; }
+  .confirm-box .btn-confirmar:active{ opacity:0.85; }
+
+  /* Modal: elegir cómo compartir la imagen generada */
+  #compartir-modal{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(17,22,36,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  #compartir-modal.hidden{ display:none; }
+  .compartir-box{
+    width:100%; max-width:340px;
+    background:#fff; border-radius:18px;
+    padding:20px 20px 20px;
+    text-align:center;
+    box-shadow:0 12px 30px rgba(17,22,36,0.25);
+  }
+  .compartir-box h3{ font-size:17px; margin:0 0 12px; color:#111624; font-weight:800; }
+  .compartir-preview{
+    width:100%; max-height:280px; overflow:hidden auto;
+    border:1px solid var(--linea); border-radius:12px;
+    margin-bottom:16px; background:#f7f9fd;
+  }
+  .compartir-preview img{ width:100%; display:block; }
+  .compartir-box .compartir-actions{ display:flex; flex-direction:column; gap:10px; }
+  .compartir-box button{ padding:13px; border-radius:12px; border:none; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .compartir-box button svg{ width:19px; height:19px; }
+  .compartir-box .btn-descargar{ background:var(--azul); color:#fff; }
+  .compartir-box .btn-descargar:active{ opacity:0.85; }
+  .compartir-box .btn-whatsapp{ background:#25d366; color:#fff; }
+  .compartir-box .btn-whatsapp:active{ opacity:0.85; }
+  .compartir-box .btn-cerrar-compartir{ background:var(--azul-suave); color:var(--azul-osc); margin-top:2px; }
+  .compartir-box .btn-cerrar-compartir:active{ background:var(--azul-borde); }
+
+  /* Botón flotante (+) para nuevo movimiento */
+  .fab{
+    position:fixed; bottom:28px; right:22px;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--azul); color:#fff; border:none;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(42,92,201,0.45);
+    cursor:pointer; z-index:50;
+  }
+  .fab.hidden{ display:none; }
+  .fab svg{ width:26px; height:26px; }
+  .fab:active{ transform:scale(0.94); }
+
+  .fab-acciones{
+    position:fixed; bottom:96px; right:22px;
+    display:flex; flex-direction:column; gap:12px; z-index:50;
+  }
+  .fab-acciones.hidden{ display:none; }
+  .fab-accion.hidden{ display:none; }
+  .fab-accion{
+    width:56px; height:56px; border-radius:50%;
+    background:var(--azul); color:#fff; border:none;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(42,92,201,0.45);
+    cursor:pointer;
+  }
+  .fab-accion.copiar{ background:#5a6787; box-shadow:0 6px 16px rgba(90,103,135,0.4); }
+  .fab-accion.editar{ background:#5f8fe0; box-shadow:0 6px 16px rgba(95,143,224,0.4); }
+  .fab-accion.eliminar{ background:#f0908d; box-shadow:0 6px 16px rgba(240,144,141,0.4); }
+  .fab-accion svg{ width:24px; height:24px; }
+  .fab-accion:active{ opacity:0.88; }
+
+  /* Modal Nuevo Movimiento / Nuevo Vehículo */
+  #nuevo-modal, #nuevo-vehiculo-modal{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(17,22,36,0.55);
+    display:flex; align-items:flex-start; justify-content:center;
+  }
+  #nuevo-modal.hidden, #nuevo-vehiculo-modal.hidden{ display:none; }
+  .nuevo-box{
+    width:100%; max-width:520px; max-height:88vh;
+    background:#fff; border-radius:18px;
+    display:flex; flex-direction:column;
+    box-shadow:0 12px 32px rgba(17,22,36,0.28);
+    margin:0 14px;
+  }
+  .nuevo-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 14px; border-bottom:1px solid var(--linea); flex-shrink:0;
+  }
+  .nuevo-header h3{ margin:0; font-size:19px; font-weight:800; color:#111624; }
+  .nuevo-close{
+    background:none; border:none; font-size:26px; line-height:1; cursor:pointer;
+    color:var(--texto-tenue); padding:4px 8px;
+  }
+  .nuevo-body{ padding:18px 20px 8px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .nuevo-body label{
+    display:block; font-size:15px; font-weight:800; color:var(--azul-osc);
+    margin:16px 0 6px;
+  }
+  #nuevo-vehiculo-modal .nuevo-body label:first-of-type{ margin-top:0; }
+  .nuevo-body input[type="text"],
+  .nuevo-body input[type="date"]{
+    width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--azul-borde);
+    background:#fff; font-size:16px; outline:none; color:#1a1f2b;
+  }
+  .nuevo-body input:focus{ border-color:var(--azul); }
+  .nuevo-body input[readonly]{ background:#f4f7fc; color:var(--texto-tenue); }
+  .nuevo-body textarea{
+    display:block; width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--azul-borde);
+    background:#fff; font-size:16px; outline:none; color:#1a1f2b; font-family:inherit;
+    resize:vertical; text-align:left;
+  }
+  .nuevo-body textarea:focus{ border-color:var(--azul); }
+
+  .nm-fecha-cliente-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .nm-fecha-cliente-grid label{ margin-top:0; }
+  .nm-servicio-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .nm-servicio-grid label{ margin-top:0; }
+  .nm-concepto-km-grid{ display:grid; grid-template-columns:2fr 1fr; gap:8px; }
+  .nm-concepto-km-grid label{ margin-top:0; }
+
+  #nuevo-modal .nuevo-body label{ text-align:center; }
+  #nuevo-modal .nuevo-body input[type="text"],
+  #nuevo-modal .nuevo-body input[type="date"]{ text-align:center; }
+  .nuevo-body label[for="nm-notas"],
+  .nuevo-body label[for="nm-email"]{ margin-top:8px; }
+
+  .nuevo-hint{ font-size:12.5px; color:var(--texto-tenue); margin-top:6px; line-height:1.4; }
+
+  .nuevo-error{ padding:0 20px; color:var(--rojo); font-size:13.5px; font-weight:600; min-height:18px; }
+  .nuevo-footer{
+    display:flex; gap:10px; padding:14px 20px 20px; flex-shrink:0;
+    border-top:1px solid var(--linea);
+  }
+  .nuevo-footer button{
+    flex:1; padding:14px; border-radius:13px; border:none;
+    font-size:15.5px; font-weight:700; cursor:pointer;
+  }
+  .btn-cancelar{ background:var(--azul-suave); color:var(--azul-osc); }
+  .btn-cancelar:active{ background:var(--azul-borde); }
+  .btn-guardar{ background:var(--azul); color:#fff; }
+  .btn-guardar:active{ opacity:0.9; }
+  .btn-guardar:disabled{ opacity:0.6; }
+
+  /* Pantalla de login */
+  #login-screen{
+    position:fixed; inset:0; z-index:300;
+    background:var(--fondo);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px; text-align:center;
+  }
+  #login-screen.hidden{ display:none; }
+  #login-screen h1{ font-size:24px; margin:0 0 4px; color:#111624; font-weight:800; }
+  #login-screen .sub{ font-size:14px; color:var(--azul); font-weight:700; margin-bottom:32px; }
+  #login-screen .login-error{ color:var(--rojo); font-size:13.5px; font-weight:600; margin-top:18px; max-width:300px; min-height:18px; }
+  #login-screen .login-checking{ color:var(--texto-tenue); font-size:14px; }
+  #google-btn-container{ min-height:44px; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h1>Vehículos</h1>
+  <div class="sub">Distribuidora Don Picconi</div>
+  <div id="login-checking" class="login-checking">Verificando sesión...</div>
+  <div id="google-btn-container" style="display:none;"></div>
+  <div class="login-error" id="login-error"></div>
+</div>
+
+<div id="confirm-eliminar-modal" class="hidden">
+  <div class="confirm-box">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </div>
+    <h3 id="confirm-eliminar-titulo">Eliminar movimiento</h3>
+    <p id="confirm-eliminar-texto">Esta acción borra el movimiento de forma permanente. No se puede deshacer.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancelar" id="confirm-eliminar-cancelar">Cancelar</button>
+      <button class="btn-confirmar" id="confirm-eliminar-aceptar">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-logout-modal" class="hidden">
+  <div class="confirm-box">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+    <h3>Cerrar sesión</h3>
+    <p>¿Seguro que querés cerrar sesión?</p>
+    <div class="confirm-actions">
+      <button class="btn-cancelar" id="confirm-logout-cancelar">Cancelar</button>
+      <button class="btn-confirmar" id="confirm-logout-aceptar">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="compartir-modal" class="hidden">
+  <div class="compartir-box">
+    <h3 id="compartir-titulo">Imagen</h3>
+    <div class="compartir-preview">
+      <img id="compartir-preview-img" alt="Vista previa de la imagen generada">
+    </div>
+    <div class="compartir-actions">
+      <button class="btn-descargar" id="btn-compartir-descargar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar imagen
+      </button>
+      <button class="btn-whatsapp" id="btn-compartir-whatsapp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.868-2.03-.967-.273-.099-.472-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.99.583 3.845 1.588 5.405L2 22l4.735-1.552A9.947 9.947 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.222a8.19 8.19 0 0 1-4.19-1.148l-.3-.179-3.12 1.023 1.04-3.03-.196-.312A8.185 8.185 0 0 1 3.778 12c0-4.535 3.687-8.222 8.222-8.222S20.222 7.465 20.222 12 16.535 20.222 12 20.222z"/></svg>
+        Compartir por WhatsApp
+      </button>
+      <button class="btn-cerrar-compartir" id="btn-compartir-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="fab-acciones" class="fab-acciones hidden">
+  <button id="fab-copiar" class="fab-accion copiar" aria-label="Copiar movimiento">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  </button>
+  <button id="fab-editar" class="fab-accion editar" aria-label="Editar movimiento">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+  </button>
+  <button id="fab-eliminar" class="fab-accion eliminar" aria-label="Eliminar movimiento">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+  </button>
+</div>
+
+<button id="fab-nuevo" class="fab hidden" aria-label="Nuevo movimiento">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<div id="nuevo-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3 id="nuevo-titulo">Nuevo movimiento</h3>
+      <button class="nuevo-close" id="nuevo-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body">
+      <input type="hidden" id="nm-edit-id">
+
+      <div class="nm-fecha-cliente-grid">
+        <div>
+          <label for="nm-fecha">Fecha</label>
+          <input type="date" id="nm-fecha">
+        </div>
+        <div>
+          <label for="nm-vehiculo">Vehículo</label>
+          <input type="text" id="nm-vehiculo" placeholder="Ej: Ford Cargo 1517" list="lista-vehiculos" autocomplete="off">
+        </div>
+      </div>
+      <datalist id="lista-vehiculos"></datalist>
+
+      <div class="nm-servicio-grid">
+        <div>
+          <label for="nm-tipo">Tipo de servicio</label>
+          <input type="text" id="nm-tipo" placeholder="Ej: Cambio de aceite" list="lista-tipos-servicio" autocomplete="off">
+        </div>
+        <div>
+          <label for="nm-taller">Taller</label>
+          <input type="text" id="nm-taller" placeholder="Ej: Taller Gómez" list="lista-talleres" autocomplete="off">
+        </div>
+      </div>
+      <datalist id="lista-tipos-servicio"></datalist>
+      <datalist id="lista-talleres"></datalist>
+
+      <div class="nm-concepto-km-grid">
+        <div>
+          <label for="nm-concepto">Concepto</label>
+          <input type="text" id="nm-concepto" placeholder="Ej: Cambio de aceite y filtro">
+        </div>
+        <div>
+          <label for="nm-km">Kilometraje</label>
+          <input type="text" inputmode="numeric" id="nm-km" placeholder="0 km">
+        </div>
+      </div>
+
+      <label for="nm-notas">Notas</label>
+      <textarea id="nm-notas" rows="2" placeholder="Notas (opcional)"></textarea>
+
+      <label for="nm-email">Usuario</label>
+      <input type="text" id="nm-email" readonly>
+    </div>
+    <div class="nuevo-error" id="nuevo-error"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="nuevo-cancelar-btn">Cancelar</button>
+      <button class="btn-guardar" id="nuevo-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="nuevo-vehiculo-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3 id="nv-titulo">Nuevo vehículo</h3>
+      <button class="nuevo-close" id="nv-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body">
+      <input type="hidden" id="nv-nombre-original">
+
+      <label>Vehículo</label>
+      <input type="text" id="nv-nombre" placeholder="Ej: Ford Cargo 1517" autocomplete="off">
+      <div class="nuevo-hint">Podés usar la marca/modelo, la patente, o como prefieras identificarlo. Ese mismo texto es el que vas a elegir después en Movimientos.</div>
+    </div>
+    <div class="nuevo-error" id="nv-error"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="nv-cancelar-btn">Cancelar</button>
+      <button class="btn-guardar" id="nv-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+
+  <header>
+    <div class="top-row">
+      <div>
+        <h1 id="header-title">Vehículos</h1>
+        <div class="sub">Distribuidora Don Picconi</div>
+      </div>
+      <div style="display:flex; gap:22px;">
+        <button class="icon-btn hidden" id="btn-compartir" aria-label="Compartir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-refresh" aria-label="Actualizar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-logout" aria-label="Cerrar sesión">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="pill-tabs">
+    <button id="tab-vehiculos" data-tab="vehiculos" class="active">Vehículos</button>
+    <button id="tab-mov" data-tab="movimientos">Movimientos</button>
+  </div>
+
+  <div class="search-wrap" id="search-wrap">
+    <input type="text" id="search" placeholder="Buscar...">
+  </div>
+
+  <main id="main">
+    <div class="state-msg" id="loading">Cargando datos...</div>
+  </main>
+
+</div>
+
+<script>
+/* ============== CONFIGURACIÓN ============== */
+const CONFIG = {
+  // Reutiliza el mismo proyecto Firebase que la app "Clientes" (podés
+  // pegar acá la config de un proyecto Firebase distinto si preferís
+  // separar los datos por completo). Las colecciones usadas por esta
+  // app ("vehiculos" y "mantenimientos") son propias, no chocan con
+  // "clientes"/"movimientos" de la otra app aunque compartan proyecto.
+  firebaseConfig: {
+    apiKey: 'AIzaSyDdA6avj0jx2389byaF7_JL5Ae3IkbhCkE',
+    authDomain: 'app-saldos-769fd.firebaseapp.com',
+    projectId: 'app-saldos-769fd',
+    storageBucket: 'app-saldos-769fd.firebasestorage.app',
+    messagingSenderId: '1084049770580',
+    appId: '1:1084049770580:web:575881c786c4f4525945c1'
+  },
+
+  // Mismo Client ID que las otras apps (Google Cloud Console >
+  // Credenciales > ID de cliente de OAuth 2.0 > Aplicación web).
+  GOOGLE_CLIENT_ID: '353708059067-1mmhljnbfm6a27keb3qqc5arnvhk94oc.apps.googleusercontent.com',
+
+  // Roles solo para decidir qué botones mostrar en la interfaz. La
+  // seguridad real (quién puede leer/escribir qué) la aplica
+  // firestore.rules del lado del servidor con esta misma lista; si
+  // agregás o sacás a alguien, actualizá los DOS lugares.
+  ROLES: {
+    'nicolaspicconi@gmail.com': 'admin',
+    'distribuidoradonpicconi@gmail.com': 'colaborador',
+    'jj978536@gmail.com': 'visitante',
+    'grandoliosergio109@gmail.com': 'visitante'
+  },
+
+  CAMPO_FECHA: 'Fecha',
+
+  // Sugerencias para el campo "Tipo de servicio" (no restringe: se
+  // puede escribir cualquier otro texto).
+  TIPOS_SERVICIO: [
+    'Cambio de aceite', 'Filtros', 'Frenos', 'Cubiertas', 'Batería',
+    'Alineación y balanceo', 'Correa de distribución', 'Refrigerante',
+    'Suspensión', 'Escape', 'Eléctrico', 'Chapa y pintura', 'Service general', 'Otro'
+  ]
+};
+/* ============================================= */
+
+/* ============== FIREBASE ============== */
+firebase.initializeApp(CONFIG.firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+document.getElementById('lista-tipos-servicio').innerHTML =
+  CONFIG.TIPOS_SERVICIO.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
+/* ======================================== */
+
+/* ============== LOGIN CON GOOGLE (vía Firebase Auth) ============== */
+const loginScreen = document.getElementById('login-screen');
+const loginChecking = document.getElementById('login-checking');
+const googleBtnContainer = document.getElementById('google-btn-container');
+const loginError = document.getElementById('login-error');
+const btnLogout = document.getElementById('btn-logout');
+
+function mostrarLogin(){
+  document.getElementById('app').style.display = 'none';
+  loginScreen.classList.remove('hidden');
+  loginChecking.style.display = 'none';
+  googleBtnContainer.style.display = 'block';
+}
+
+function ocultarLogin(){
+  loginScreen.classList.add('hidden');
+  document.getElementById('app').style.display = '';
+  loginError.textContent = '';
+}
+
+function manejarCredencial(response){
+  loginError.textContent = '';
+  loginChecking.style.display = 'block';
+  googleBtnContainer.style.display = 'none';
+  const credencial = firebase.auth.GoogleAuthProvider.credential(response.credential);
+  auth.signInWithCredential(credencial).catch(err => {
+    loginChecking.style.display = 'none';
+    googleBtnContainer.style.display = 'block';
+    loginError.textContent = 'No se pudo iniciar sesión: ' + err.message;
+  });
+}
+
+function iniciarLogin(){
+  if(!window.google || !google.accounts || !google.accounts.id){
+    setTimeout(iniciarLogin, 300);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: CONFIG.GOOGLE_CLIENT_ID,
+    callback: manejarCredencial
+  });
+  google.accounts.id.renderButton(googleBtnContainer, {
+    type: 'standard', size: 'large', theme: 'filled_blue', text: 'signin_with', shape: 'pill'
+  });
+}
+
+auth.onAuthStateChanged(async (user) => {
+  if(!user){
+    miEmail = null;
+    miRol = null;
+    mostrarLogin();
+    return;
+  }
+  loginChecking.style.display = 'block';
+  googleBtnContainer.style.display = 'none';
+  miEmail = String(user.email || '').trim().toLowerCase();
+  const rol = CONFIG.ROLES[miEmail];
+  if(!rol){
+    loginError.textContent = 'Tu cuenta (' + miEmail + ') no tiene acceso a esta app.';
+    await auth.signOut();
+    return;
+  }
+  miRol = rol;
+  try{
+    aplicarPermisosUI();
+    ocultarLogin();
+    await cargarDatos();
+  }catch(err){
+    loginError.textContent = 'No se pudo cargar la app: ' + err.message;
+    await auth.signOut();
+  }
+});
+
+btnLogout.addEventListener('click', () => {
+  document.getElementById('confirm-logout-modal').classList.remove('hidden');
+});
+document.getElementById('confirm-logout-cancelar').addEventListener('click', () => {
+  document.getElementById('confirm-logout-modal').classList.add('hidden');
+});
+document.getElementById('confirm-logout-aceptar').addEventListener('click', () => {
+  document.getElementById('confirm-logout-modal').classList.add('hidden');
+  auth.signOut();
+});
+/* ================================================ */
+
+// Nombre de vehículo a slug, usado como ID de documento en la colección
+// "vehiculos".
+function slugVehiculo_(nombre){
+  return String(nombre || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'vehiculo';
+}
+
+function fechaComparable_(valor){
+  if(typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)){
+    const [y, m, d] = valor.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d).getTime();
+  }
+  return new Date(valor).getTime();
+}
+
+function ordenComparable_(valor){
+  if(valor && typeof valor.toMillis === 'function') return valor.toMillis();
+  return 0;
+}
+
+// ============== Movimientos: guardar / eliminar ==============
+async function guardarMovimientoFirestore_(payload){
+  const vehiculo = String(payload.vehiculo || '').trim();
+  const fecha = payload.fecha;
+  const tipoServicio = String(payload.tipoServicio || '').trim();
+  const taller = String(payload.taller || '').trim();
+  const concepto = String(payload.concepto || '').trim();
+  const kilometraje = payload.kilometraje === '' ? null : (parseFloat(payload.kilometraje) || 0);
+  const notas = String(payload.notas || '').trim();
+
+  if(!vehiculo) throw new Error('Falta el vehículo');
+  if(!fecha) throw new Error('Falta la fecha');
+  const existeVehiculo = vehiculos.some(v => String(v['Vehiculo'] || '').trim().toLowerCase() === vehiculo.toLowerCase());
+  if(!existeVehiculo){
+    throw new Error('El vehículo "' + vehiculo + '" no está cargado en la lista de Vehículos. Agregalo primero desde esa pestaña.');
+  }
+
+  if(payload.id){
+    if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para editar un movimiento. Solo un administrador puede hacerlo.');
+    const ref = db.collection('mantenimientos').doc(String(payload.id));
+    const snap = await ref.get();
+    if(!snap.exists) throw new Error('No se encontró el movimiento a editar');
+
+    await ref.update({
+      'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
+      'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Notas': notas
+      // 'Usuario' NO se toca: se conserva el de quien cargó el
+      // movimiento originalmente, no el de quien lo está editando ahora.
+    });
+  }else{
+    const ref = db.collection('mantenimientos').doc();
+    await ref.set({
+      'ID': ref.id, 'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
+      'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Usuario': miEmail, 'Notas': notas,
+      'Fecha Real': firebase.firestore.FieldValue.serverTimestamp(),
+      // Se fija una sola vez, acá, y nunca se vuelve a tocar: define la
+      // posición fija del movimiento en la lista.
+      'Orden': firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  await cargarDatos();
+}
+
+async function eliminarMovimientoFirestore_(id){
+  if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para eliminar un movimiento. Solo un administrador puede hacerlo.');
+  const ref = db.collection('mantenimientos').doc(String(id));
+  const snap = await ref.get();
+  if(!snap.exists) throw new Error('No se encontró el movimiento a eliminar');
+  await ref.delete();
+  await cargarDatos();
+}
+/* =============================================================== */
+
+// ============== Vehículos: guardar / eliminar ==============
+async function guardarVehiculoFirestore_(nombreNuevoIn, nombreOriginalIn){
+  const nombreNuevo = String(nombreNuevoIn || '').trim();
+  const nombreOriginal = String(nombreOriginalIn || '').trim();
+  if(!nombreNuevo) throw new Error('Falta el nombre del vehículo');
+  if(nombreOriginal && miRol !== 'admin'){
+    throw new Error('Tu usuario no tiene permiso para editar un vehículo. Solo un administrador puede hacerlo.');
+  }
+
+  const slugNuevo = slugVehiculo_(nombreNuevo);
+  const refNuevo = db.collection('vehiculos').doc(slugNuevo);
+
+  if(nombreOriginal){
+    const slugOriginal = slugVehiculo_(nombreOriginal);
+    const refOriginal = db.collection('vehiculos').doc(slugOriginal);
+    const snapOriginal = await refOriginal.get();
+    if(!snapOriginal.exists) throw new Error('No se encontró el vehículo a editar');
+
+    if(slugOriginal === slugNuevo){
+      await refOriginal.update({ 'Vehiculo': nombreNuevo });
+    }else{
+      const yaExiste = await refNuevo.get();
+      if(yaExiste.exists) throw new Error('Ya existe otro vehículo con ese nombre');
+      await refNuevo.set({ 'Vehiculo': nombreNuevo });
+      await refOriginal.delete();
+
+      // Renombrado en cascada: todos los movimientos de este vehículo
+      // pasan a apuntar al nombre nuevo, para no perder el vínculo.
+      const snapMov = await db.collection('mantenimientos').where('Vehiculo', '==', nombreOriginal).get();
+      if(!snapMov.empty){
+        const batch = db.batch();
+        snapMov.forEach(d => batch.update(d.ref, { 'Vehiculo': nombreNuevo }));
+        await batch.commit();
+      }
+    }
+  }else{
+    const yaExiste = await refNuevo.get();
+    if(yaExiste.exists) throw new Error('Ya existe un vehículo con ese nombre');
+    await refNuevo.set({ 'Vehiculo': nombreNuevo });
+  }
+
+  await cargarDatos();
+}
+
+async function eliminarVehiculoFirestore_(nombreIn){
+  const nombre = String(nombreIn || '').trim();
+  if(!nombre) throw new Error('Falta el vehículo a eliminar');
+  if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para eliminar un vehículo. Solo un administrador puede hacerlo.');
+
+  const snapMov = await db.collection('mantenimientos').where('Vehiculo', '==', nombre).limit(1).get();
+  if(!snapMov.empty){
+    throw new Error('No se puede eliminar: el vehículo tiene movimientos cargados. Eliminá primero sus movimientos.');
+  }
+  await db.collection('vehiculos').doc(slugVehiculo_(nombre)).delete();
+  await cargarDatos();
+}
+/* =============================================================== */
+
+let movimientos = [];
+let vehiculos = [];
+let currentTab = 'vehiculos';
+let miRol = null; // 'admin', 'colaborador' o 'visitante'
+let miEmail = null; // email de Google de quien está logueado
+
+const mainEl = document.getElementById('main');
+const searchEl = document.getElementById('search');
+const searchWrapEl = document.getElementById('search-wrap');
+const headerTitle = document.getElementById('header-title');
+const btnRefresh = document.getElementById('btn-refresh');
+const btnCompartir = document.getElementById('btn-compartir');
+
+function parsearFechaLocal_(valor){
+  if(valor instanceof Date) return valor;
+  if(typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)){
+    const [y, m, d] = valor.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(valor);
+}
+
+function formatFecha(valor){
+  if(!valor) return '-';
+  if(typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)){
+    const [y, m, d] = valor.slice(0, 10).split('-');
+    return `${d}/${m}/${y}`;
+  }
+  const d = new Date(valor);
+  if(isNaN(d)) return String(valor);
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function fechaLocalInput(d){
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Formatea un kilometraje: separador de miles + "km". Sin dato -> "-".
+function formatKm(n){
+  if(n === null || n === undefined || n === '') return '-';
+  const num = Number(n);
+  if(isNaN(num)) return '-';
+  return num.toLocaleString('es-AR', { maximumFractionDigits: 0 }) + ' km';
+}
+
+async function cargarDatos(){
+  btnRefresh.classList.add('spinning');
+  try{
+    const [movSnap, vehSnap] = await Promise.all([
+      db.collection('mantenimientos').orderBy('Orden', 'asc').get(),
+      db.collection('vehiculos').get()
+    ]);
+    movimientos = movSnap.docs.map(d => Object.assign({}, d.data(), { ID: d.id }));
+    vehiculos = vehSnap.docs.map(d => Object.assign({}, d.data(), { _id: d.id }));
+    actualizarListaVehiculos();
+    if(currentTab === 'movimientos') irAlFondoMovimientos = true;
+    render();
+  }catch(err){
+    mainEl.innerHTML = `<div class="state-msg error">No se pudieron cargar los datos de Firebase.<br>${err.message}</div>`;
+  }finally{
+    btnRefresh.classList.remove('spinning');
+  }
+}
+
+/* ============== Pestaña Vehículos (lista maestra) ============== */
+let ultimaListaVehiculosVisible = [];
+
+// Calcula, para cada vehículo, la fecha y el kilometraje de su
+// movimiento más reciente (a partir de los movimientos ya cargados;
+// no se guarda como campo aparte en Firestore).
+function calcularResumenVehiculos(){
+  return vehiculos
+    .map(v => {
+      const nombre = String(v['Vehiculo'] || '').trim();
+      const propios = movimientos
+        .filter(m => String(m['Vehiculo'] || '').trim() === nombre)
+        .slice()
+        .sort((a,b) =>
+          fechaComparable_(a['Fecha']) - fechaComparable_(b['Fecha']) ||
+          ordenComparable_(a['Orden']) - ordenComparable_(b['Orden'])
+        );
+      const ultimo = propios[propios.length - 1];
+      return {
+        nombre,
+        fecha: ultimo ? (ultimo['Fecha'] || '') : '',
+        km: ultimo && ultimo['Kilometraje'] !== null && ultimo['Kilometraje'] !== undefined ? ultimo['Kilometraje'] : null,
+        cantidad: propios.length
+      };
+    })
+    .filter(v => v.nombre);
+}
+
+function renderTablaVehiculos(lista, mensajeVacio){
+  ultimaListaVehiculosVisible = lista;
+
+  if(!lista.length){
+    mainEl.innerHTML = `<div class="state-msg">${mensajeVacio}</div>`;
+    return;
+  }
+
+  const filas = lista.map(v => {
+    const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
+    return `<tr class="cliente-row" data-vehiculo="${v.nombre.replace(/"/g,'&quot;')}">
+      <td class="nombre">${v.nombre}</td>
+      <td class="fecha">${formatFecha(v.fecha)}</td>
+      <td class="km ${claseKm}">${formatKm(v.km)}</td>
+    </tr>`;
+  }).join('');
+
+  mainEl.innerHTML = `
+    <div class="stock-table-wrap">
+      <div class="clientes-scroll">
+        <table class="clientes">
+          <colgroup>
+            <col><col style="width:112px"><col style="width:110px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="nombre">Vehículo</th>
+              <th>Último service</th>
+              <th>Km</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const nombre = tr.dataset.vehiculo;
+      vehiculoSeleccionadoNombre = (vehiculoSeleccionadoNombre === nombre) ? null : nombre;
+      actualizarSeleccionUI();
+    });
+  });
+  actualizarSeleccionUI();
+}
+
+function renderVehiculos(filtro){
+  const lista = calcularResumenVehiculos()
+    .filter(v => {
+      if(!filtro) return true;
+      return v.nombre.toLowerCase().includes(filtro.toLowerCase());
+    })
+    .sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+  renderTablaVehiculos(lista, 'Sin vehículos que coincidan.');
+}
+
+/* ============== Pestaña Movimientos ============== */
+function renderMovimientos(filtro){
+  const ordenados = movimientos;
+
+  const filas = ordenados
+    .filter(mov => {
+      if(!filtro) return true;
+      const texto = `${mov['Vehiculo']||''} ${mov['Tipo de Servicio']||''} ${mov['Taller']||''} ${mov['Concepto']||''}`.toLowerCase();
+      return texto.includes(filtro.toLowerCase());
+    })
+    .map(mov => {
+      const km = mov['Kilometraje'];
+      const claseKm = (km === null || km === undefined || km === '') ? 'zero' : '';
+      return `<tr class="mov-row" data-id="${mov['ID'] || ''}">
+        <td class="fecha">${formatFecha(mov[CONFIG.CAMPO_FECHA])}</td>
+        <td class="cliente">${mov['Vehiculo'] || '-'}</td>
+        <td>${mov['Tipo de Servicio'] || '-'}</td>
+        <td>${mov['Taller'] || '-'}</td>
+        <td class="concepto">${mov['Concepto'] || '-'}</td>
+        <td class="km ${claseKm}">${formatKm(km)}</td>
+        <td class="notas">${mov['Notas'] || '-'}</td>
+        <td class="usuario">${mov['Usuario'] || '-'}</td>
+      </tr>`;
+    }).join('');
+
+  if(!filas){
+    mainEl.innerHTML = `<div class="state-msg">Sin movimientos que coincidan.</div>`;
+    return;
+  }
+
+  mainEl.innerHTML = `
+    <div class="mov-table-wrap">
+      <div class="mov-scroll" id="mov-scroll">
+        <table class="mov">
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Vehículo</th><th>Tipo de Servicio</th><th>Taller</th>
+              <th>Concepto</th><th>Km</th><th>Notas</th><th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  mainEl.querySelectorAll('tr.mov-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const id = tr.dataset.id;
+      filaSeleccionadaId = (filaSeleccionadaId === id) ? null : id;
+      actualizarSeleccionUI();
+    });
+  });
+  actualizarSeleccionUI();
+}
+
+function actualizarListaVehiculos(){
+  const nombres = vehiculos.map(v => String(v['Vehiculo']||'').trim()).filter(Boolean)
+    .sort((a,b) => a.localeCompare(b, 'es'));
+  document.getElementById('lista-vehiculos').innerHTML =
+    nombres.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+
+  const talleres = [...new Set(movimientos.map(m => String(m['Taller']||'').trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, 'es'));
+  document.getElementById('lista-talleres').innerHTML =
+    talleres.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
+}
+
+/* ============== Scroll / tabs ============== */
+const scrollState = { vehiculos: 0, movimientos: { top: 0, left: 0 } };
+let irAlFondoMovimientos = false;
+
+function guardarScrollActual(){
+  if(currentTab === 'movimientos'){
+    const movScroll = document.getElementById('mov-scroll');
+    if(movScroll){
+      scrollState.movimientos.top = movScroll.scrollTop;
+      scrollState.movimientos.left = movScroll.scrollLeft;
+    }
+  }else{
+    scrollState.vehiculos = mainEl.scrollTop;
+  }
+}
+
+function restaurarScroll(){
+  if(currentTab === 'movimientos'){
+    const movScroll = document.getElementById('mov-scroll');
+    if(movScroll){
+      if(irAlFondoMovimientos){
+        movScroll.scrollTop = movScroll.scrollHeight;
+        movScroll.scrollLeft = 0;
+        irAlFondoMovimientos = false;
+      }else{
+        movScroll.scrollTop = scrollState.movimientos.top;
+        movScroll.scrollLeft = scrollState.movimientos.left;
+      }
+    }
+  }else{
+    mainEl.scrollTop = scrollState.vehiculos;
+  }
+}
+
+function render(){
+  const filtro = searchEl.value.trim();
+  mainEl.classList.toggle('grid-mode', currentTab === 'movimientos');
+  mainEl.classList.toggle('ancho-tabla', currentTab === 'vehiculos');
+  fabNuevo.classList.toggle('hidden', miRol === 'visitante');
+  btnCompartir.classList.remove('hidden');
+  if(currentTab === 'vehiculos'){
+    headerTitle.textContent = 'Vehículos';
+    searchEl.placeholder = 'Buscar vehículo...';
+    renderVehiculos(filtro);
+  }else{
+    headerTitle.textContent = 'Movimientos';
+    searchEl.placeholder = 'Buscar movimiento...';
+    renderMovimientos(filtro);
+  }
+  restaurarScroll();
+  posicionarFabs();
+}
+
+function posicionarFabs(){
+  const wrap = document.querySelector('.mov-table-wrap, .stock-table-wrap');
+  const right = wrap ? Math.max(16, window.innerWidth - wrap.getBoundingClientRect().right + 22) : 22;
+  fabNuevo.style.right = right + 'px';
+  fabAcciones.style.right = right + 'px';
+}
+window.addEventListener('resize', posicionarFabs);
+
+function setTab(tab){
+  if(tab === currentTab) return;
+  guardarScrollActual();
+  currentTab = tab;
+  document.getElementById('tab-vehiculos').classList.toggle('active', tab === 'vehiculos');
+  document.getElementById('tab-mov').classList.toggle('active', tab === 'movimientos');
+  deseleccionarFila();
+  render();
+  if(tab === 'vehiculos') cargarDatos();
+}
+
+document.getElementById('tab-vehiculos').addEventListener('click', () => setTab('vehiculos'));
+document.getElementById('tab-mov').addEventListener('click', () => setTab('movimientos'));
+
+btnRefresh.addEventListener('click', cargarDatos);
+searchEl.addEventListener('input', () => {
+  scrollState.vehiculos = 0;
+  scrollState.movimientos = { top: 0, left: 0 };
+  render();
+});
+
+/* ============== Compartir imagen (Vehículos y Movimientos) ============== */
+
+function fechaParaArchivo(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function marcarCompartirOk(){
+  const original = btnCompartir.innerHTML;
+  btnCompartir.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  setTimeout(() => { btnCompartir.innerHTML = original; }, 1400);
+}
+
+async function generarImagenTabla(){
+  if(!window.html2canvas){
+    throw new Error('No se pudo cargar la librería para generar imágenes. Revisá tu conexión a internet.');
+  }
+  const esMovimientos = currentTab === 'movimientos';
+  const titulo = currentTab === 'vehiculos' ? 'Vehículos' : 'Movimientos';
+  const wrap = mainEl.querySelector(esMovimientos ? '.mov-table-wrap' : '.stock-table-wrap');
+  if(!wrap) throw new Error('No hay tabla para capturar.');
+
+  const ancho = esMovimientos ? 1080 : 520;
+  const contenedor = document.createElement('div');
+  contenedor.style.cssText = `position:fixed; left:-9999px; top:0; width:${ancho}px; background:#ffffff; padding:22px; font-family:` + getComputedStyle(document.body).fontFamily.replace(/'/g, '') + ';';
+  contenedor.innerHTML = `
+    <div style="font-size:21px;font-weight:800;color:#111624;letter-spacing:-0.4px;margin-bottom:2px;">${titulo}</div>
+    <div style="font-size:14px;font-weight:700;color:#2a5cc9;margin-bottom:16px;">Distribuidora Don Picconi — ${new Date().toLocaleDateString('es-AR')}</div>
+  `;
+  const clon = wrap.cloneNode(true);
+  const scroll = clon.querySelector('.mov-scroll, .clientes-scroll') || clon;
+  scroll.style.overflow = 'visible';
+  scroll.style.maxHeight = 'none';
+  contenedor.appendChild(clon);
+  document.body.appendChild(contenedor);
+
+  try{
+    const canvas = await html2canvas(contenedor, { backgroundColor: '#ffffff', scale: 2 });
+    return canvas;
+  }finally{
+    document.body.removeChild(contenedor);
+  }
+}
+
+const compartirModal = document.getElementById('compartir-modal');
+const compartirTitulo = document.getElementById('compartir-titulo');
+const compartirPreviewImg = document.getElementById('compartir-preview-img');
+const btnCompartirDescargar = document.getElementById('btn-compartir-descargar');
+const btnCompartirWhatsapp = document.getElementById('btn-compartir-whatsapp');
+const btnCompartirCerrar = document.getElementById('btn-compartir-cerrar');
+let compartirBlobActual = null;
+let compartirUrlActual = null;
+let compartirNombreActual = null;
+
+function cerrarCompartirModal(){
+  compartirModal.classList.add('hidden');
+  if(compartirUrlActual){ URL.revokeObjectURL(compartirUrlActual); }
+  compartirBlobActual = null;
+  compartirUrlActual = null;
+  compartirNombreActual = null;
+}
+
+btnCompartirCerrar.addEventListener('click', cerrarCompartirModal);
+
+btnCompartirDescargar.addEventListener('click', () => {
+  if(!compartirBlobActual || !compartirUrlActual) return;
+  const a = document.createElement('a');
+  a.href = compartirUrlActual;
+  a.download = compartirNombreActual;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  marcarCompartirOk();
+  cerrarCompartirModal();
+});
+
+btnCompartirWhatsapp.addEventListener('click', async () => {
+  if(!compartirBlobActual) return;
+  const archivo = new File([compartirBlobActual], compartirNombreActual, { type: 'image/png' });
+
+  if(navigator.canShare && navigator.canShare({ files: [archivo] })){
+    try{
+      await navigator.share({ files: [archivo], title: currentTab === 'vehiculos' ? 'Vehículos' : 'Movimientos de mantenimiento' });
+      marcarCompartirOk();
+      cerrarCompartirModal();
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+    }
+  }
+
+  alert('En la computadora no se puede enviar la imagen directo a WhatsApp. Tocá "Descargar imagen" y después adjuntala manualmente en WhatsApp Web o Desktop.');
+});
+
+btnCompartir.addEventListener('click', async () => {
+  btnCompartir.disabled = true;
+  btnCompartir.classList.add('spinning');
+  try{
+    const canvas = await generarImagenTabla();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if(!blob) throw new Error('No se pudo generar la imagen.');
+
+    compartirBlobActual = blob;
+    compartirNombreActual = currentTab === 'vehiculos'
+      ? `vehiculos-${fechaParaArchivo()}.png`
+      : `movimientos-mantenimiento-${fechaParaArchivo()}.png`;
+    compartirUrlActual = URL.createObjectURL(blob);
+    compartirTitulo.textContent = currentTab === 'vehiculos' ? 'Imagen de vehículos' : 'Imagen de movimientos';
+    compartirPreviewImg.src = compartirUrlActual;
+    compartirModal.classList.remove('hidden');
+  }catch(err){
+    alert('No se pudo generar la imagen: ' + err.message);
+  }finally{
+    btnCompartir.disabled = false;
+    btnCompartir.classList.remove('spinning');
+  }
+});
+
+/* ============== Selección y FABs (Movimientos + Vehículos) ============== */
+const fabNuevo = document.getElementById('fab-nuevo');
+const fabAcciones = document.getElementById('fab-acciones');
+const fabEditar = document.getElementById('fab-editar');
+const fabCopiar = document.getElementById('fab-copiar');
+const fabEliminar = document.getElementById('fab-eliminar');
+let filaSeleccionadaId = null;
+let vehiculoSeleccionadoNombre = null;
+
+// En la pestaña Movimientos, "copiar" duplica un movimiento. En la
+// pestaña Vehículos, ese mismo botón se reutiliza para saltar a ver
+// los movimientos del vehículo seleccionado.
+const ICONO_COPIAR_MOV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const ICONO_VER_MOVIMIENTOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+
+function actualizarIconosFabAcciones(){
+  if(currentTab === 'vehiculos'){
+    fabCopiar.innerHTML = ICONO_VER_MOVIMIENTOS;
+    fabCopiar.setAttribute('aria-label', 'Ver movimientos del vehículo');
+    fabEditar.setAttribute('aria-label', 'Editar vehículo');
+    fabEliminar.setAttribute('aria-label', 'Eliminar vehículo');
+  }else{
+    fabCopiar.innerHTML = ICONO_COPIAR_MOV;
+    fabCopiar.setAttribute('aria-label', 'Copiar movimiento');
+    fabEditar.setAttribute('aria-label', 'Editar movimiento');
+    fabEliminar.setAttribute('aria-label', 'Eliminar movimiento');
+  }
+}
+
+// Un colaborador puede agregar, pero no editar ni eliminar. Un
+// visitante es de solo lectura. El servidor (firestore.rules) también
+// rechaza esas acciones aunque alguien fuerce el botón.
+function aplicarPermisosUI(){
+  const esVisitante = miRol === 'visitante';
+  fabEditar.classList.toggle('hidden', miRol !== 'admin');
+  fabEliminar.classList.toggle('hidden', miRol !== 'admin');
+  fabNuevo.classList.toggle('hidden', esVisitante);
+  if(esVisitante) fabAcciones.classList.add('hidden');
+}
+
+function actualizarSeleccionUI(){
+  actualizarIconosFabAcciones();
+  aplicarPermisosUI();
+  if(currentTab === 'vehiculos'){
+    let encontrada = false;
+    mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+      const esta = tr.dataset.vehiculo === vehiculoSeleccionadoNombre;
+      tr.classList.toggle('selected', esta);
+      if(esta) encontrada = true;
+    });
+    if(vehiculoSeleccionadoNombre && !encontrada) vehiculoSeleccionadoNombre = null;
+    fabAcciones.classList.toggle('hidden', miRol === 'visitante' || !vehiculoSeleccionadoNombre);
+  }else{
+    let encontrada = false;
+    mainEl.querySelectorAll('tr.mov-row').forEach(tr => {
+      const esta = tr.dataset.id === filaSeleccionadaId;
+      tr.classList.toggle('selected', esta);
+      if(esta) encontrada = true;
+    });
+    if(filaSeleccionadaId && !encontrada) filaSeleccionadaId = null;
+    fabAcciones.classList.toggle('hidden', miRol === 'visitante' || !filaSeleccionadaId);
+  }
+}
+
+function deseleccionarFila(){
+  filaSeleccionadaId = null;
+  vehiculoSeleccionadoNombre = null;
+  actualizarSeleccionUI();
+}
+
+/* ============== Nuevo / editar movimiento ============== */
+const nuevoModal = document.getElementById('nuevo-modal');
+const nuevoTitulo = document.getElementById('nuevo-titulo');
+const nmEditId = document.getElementById('nm-edit-id');
+const nmFecha = document.getElementById('nm-fecha');
+const nmVehiculo = document.getElementById('nm-vehiculo');
+const nmTipo = document.getElementById('nm-tipo');
+const nmTaller = document.getElementById('nm-taller');
+const nmConcepto = document.getElementById('nm-concepto');
+const nmKm = document.getElementById('nm-km');
+const nmNotas = document.getElementById('nm-notas');
+const nmEmail = document.getElementById('nm-email');
+const nuevoError = document.getElementById('nuevo-error');
+const btnGuardar = document.getElementById('nuevo-guardar');
+
+// Formateo en vivo del kilometraje: solo dígitos, separador de miles.
+function formatearKm(valorCrudo){
+  const limpio = valorCrudo.replace(/[^0-9]/g, '').slice(0, 9);
+  if(!limpio) return '';
+  return Number(limpio).toLocaleString('es-AR');
+}
+function limpiarKmParaEnvio(valorFormateado){
+  return valorFormateado.replace(/\./g, '');
+}
+nmKm.addEventListener('input', () => { nmKm.value = formatearKm(nmKm.value); });
+
+function numeroKmAInputStr(num){
+  if(num === undefined || num === null || num === '') return '';
+  const n = parseFloat(num);
+  if(isNaN(n)) return '';
+  return n.toLocaleString('es-AR');
+}
+
+function abrirNuevoModal(mov, modoEditar){
+  const precargar = !!mov;
+  nmEditId.value = (precargar && modoEditar) ? (mov['ID'] || '') : '';
+  nuevoTitulo.textContent = modoEditar ? 'Editar movimiento' : (precargar ? 'Copiar movimiento' : 'Nuevo movimiento');
+
+  nmVehiculo.value = precargar ? (mov['Vehiculo'] || '') : '';
+  nmFecha.value = precargar && mov[CONFIG.CAMPO_FECHA]
+    ? fechaLocalInput(parsearFechaLocal_(mov[CONFIG.CAMPO_FECHA]))
+    : fechaLocalInput(new Date());
+
+  nmTipo.value = precargar ? (mov['Tipo de Servicio'] || '') : '';
+  nmTaller.value = precargar ? (mov['Taller'] || '') : '';
+  nmConcepto.value = precargar ? (mov['Concepto'] || '') : '';
+  nmKm.value = precargar ? numeroKmAInputStr(mov['Kilometraje']) : '';
+  nmNotas.value = precargar ? (mov['Notas'] || '') : '';
+
+  // El usuario queda bloqueado con el email de quien está logueado
+  // ahora. Al editar un movimiento existente, se conserva el usuario
+  // que lo cargó originalmente en vez de pisarlo con el del editor.
+  nmEmail.value = (precargar && modoEditar && mov['Usuario']) ? mov['Usuario'] : (miEmail || '');
+
+  nuevoError.textContent = '';
+  btnGuardar.disabled = false;
+  btnGuardar.textContent = modoEditar ? 'Guardar cambios' : (precargar ? 'Guardar copia' : 'Guardar');
+  nuevoModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#nuevo-modal .nuevo-box'));
+  document.querySelectorAll('#nuevo-modal .nuevo-body')[0].scrollTop = 0;
+}
+
+function cerrarNuevoModal(){
+  nuevoModal.classList.add('hidden');
+  liberarLockActivo();
+}
+
+// ============== Lock de edición (avisa si otro usuario ya está
+// editando la misma fila) ==============
+let lockIdActivo = null;
+
+async function pedirLock(id){
+  const ref = db.collection('locks_mantenimiento').doc(id);
+  try{
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const ahora = Date.now();
+      if(snap.exists){
+        const datos = snap.data();
+        const expiraMs = datos.expira && datos.expira.toMillis ? datos.expira.toMillis() : 0;
+        if(datos.email !== miEmail && expiraMs > ahora){
+          const minutosRestantes = Math.max(1, Math.ceil((expiraMs - ahora) / 60000));
+          throw new Error('Esto lo está editando ahora ' + datos.email + '. Probá de nuevo en unos minutos (o pedile que termine y cierre el formulario).');
+        }
+      }
+      tx.set(ref, {
+        email: miEmail,
+        desde: firebase.firestore.FieldValue.serverTimestamp(),
+        expira: firebase.firestore.Timestamp.fromMillis(ahora + LOCK_TTL_MS)
+      });
+    });
+    return true;
+  }catch(err){
+    alert(err.message && err.message.includes('editando ahora')
+      ? err.message
+      : ('No se pudo verificar si otra persona está editando esto: ' + err.message));
+    return false;
+  }
+}
+
+function liberarLockActivo(){
+  if(!lockIdActivo) return;
+  const id = lockIdActivo;
+  lockIdActivo = null;
+  const ref = db.collection('locks_mantenimiento').doc(id);
+  ref.get().then(snap => {
+    if(snap.exists && snap.data().email === miEmail) return ref.delete();
+  }).catch(() => {});
+}
+
+function posicionarNuevoBox(box){
+  const offset = Math.round(searchWrapEl.getBoundingClientRect().bottom) + 10;
+  box.style.marginTop = offset + 'px';
+  box.style.maxHeight = `calc(100vh - ${offset}px - 16px)`;
+}
+
+fabNuevo.addEventListener('click', () => {
+  if(miRol === 'visitante') return;
+  if(currentTab === 'vehiculos') abrirNuevoVehiculoModal();
+  else abrirNuevoModal();
+});
+document.getElementById('nuevo-cerrar').addEventListener('click', cerrarNuevoModal);
+document.getElementById('nuevo-cancelar-btn').addEventListener('click', cerrarNuevoModal);
+
+fabEditar.addEventListener('click', async () => {
+  if(miRol !== 'admin') return;
+  if(currentTab === 'vehiculos'){
+    const nombre = vehiculoSeleccionadoNombre;
+    const veh = vehiculos.find(v => String(v['Vehiculo']||'').trim() === nombre);
+    deseleccionarFila();
+    if(!veh) return;
+    const idLock = 'vehiculo_' + slugVehiculo_(nombre);
+    if(!(await pedirLock(idLock))) return;
+    lockIdActivo = idLock;
+    abrirNuevoVehiculoModal(veh);
+  }else{
+    const mov = movimientos.find(m => String(m['ID']) === String(filaSeleccionadaId));
+    deseleccionarFila();
+    if(!mov) return;
+    const idLock = String(mov['ID']);
+    if(!(await pedirLock(idLock))) return;
+    lockIdActivo = idLock;
+    abrirNuevoModal(mov, true);
+  }
+});
+
+fabCopiar.addEventListener('click', () => {
+  if(miRol === 'visitante') return;
+  if(currentTab === 'vehiculos'){
+    const nombre = vehiculoSeleccionadoNombre;
+    deseleccionarFila();
+    if(nombre){
+      setTab('movimientos');
+      searchEl.value = nombre;
+      render();
+    }
+  }else{
+    const mov = movimientos.find(m => String(m['ID']) === String(filaSeleccionadaId));
+    deseleccionarFila();
+    if(mov) abrirNuevoModal(mov, false);
+  }
+});
+
+const confirmEliminarModal = document.getElementById('confirm-eliminar-modal');
+const confirmEliminarTitulo = document.getElementById('confirm-eliminar-titulo');
+const confirmEliminarTexto = document.getElementById('confirm-eliminar-texto');
+let idAEliminar = null;
+let vehiculoAEliminar = null;
+
+fabEliminar.addEventListener('click', () => {
+  if(miRol !== 'admin') return;
+  if(currentTab === 'vehiculos'){
+    vehiculoAEliminar = vehiculoSeleccionadoNombre;
+    deseleccionarFila();
+    if(!vehiculoAEliminar) return;
+    confirmEliminarTitulo.textContent = 'Eliminar vehículo';
+    confirmEliminarTexto.textContent = 'Esta acción borra el vehículo de la lista. Si tiene movimientos cargados, primero hay que eliminarlos. No se puede deshacer.';
+    confirmEliminarModal.classList.remove('hidden');
+  }else{
+    idAEliminar = filaSeleccionadaId;
+    deseleccionarFila();
+    if(!idAEliminar) return;
+    confirmEliminarTitulo.textContent = 'Eliminar movimiento';
+    confirmEliminarTexto.textContent = 'Esta acción borra el movimiento de mantenimiento de forma permanente. No se puede deshacer.';
+    confirmEliminarModal.classList.remove('hidden');
+  }
+});
+
+document.getElementById('confirm-eliminar-cancelar').addEventListener('click', () => {
+  confirmEliminarModal.classList.add('hidden');
+  idAEliminar = null;
+  vehiculoAEliminar = null;
+});
+
+document.getElementById('confirm-eliminar-aceptar').addEventListener('click', async () => {
+  if(!idAEliminar && !vehiculoAEliminar) return;
+  const btnAceptar = document.getElementById('confirm-eliminar-aceptar');
+  btnAceptar.disabled = true;
+  btnAceptar.textContent = 'Eliminando...';
+  try{
+    if(vehiculoAEliminar) await eliminarVehiculoFirestore_(vehiculoAEliminar);
+    else await eliminarMovimientoFirestore_(idAEliminar);
+
+    confirmEliminarModal.classList.add('hidden');
+    idAEliminar = null;
+    vehiculoAEliminar = null;
+  }catch(err){
+    alert('No se pudo eliminar: ' + err.message);
+  }finally{
+    btnAceptar.disabled = false;
+    btnAceptar.textContent = 'Eliminar';
+  }
+});
+
+/* ============== Nuevo / editar vehículo ============== */
+const nuevoVehiculoModal = document.getElementById('nuevo-vehiculo-modal');
+const nvNombreOriginal = document.getElementById('nv-nombre-original');
+const nvTitulo = document.getElementById('nv-titulo');
+const nvNombre = document.getElementById('nv-nombre');
+const nvError = document.getElementById('nv-error');
+const nvGuardar = document.getElementById('nv-guardar');
+
+function abrirNuevoVehiculoModal(veh){
+  const editando = !!veh;
+  nvNombreOriginal.value = editando ? String(veh['Vehiculo'] || '') : '';
+  nvTitulo.textContent = editando ? 'Editar vehículo' : 'Nuevo vehículo';
+  nvNombre.value = editando ? String(veh['Vehiculo'] || '') : '';
+  nvError.textContent = '';
+  nvGuardar.disabled = false;
+  nvGuardar.textContent = editando ? 'Guardar cambios' : 'Guardar';
+  nuevoVehiculoModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#nuevo-vehiculo-modal .nuevo-box'));
+  document.querySelectorAll('#nuevo-vehiculo-modal .nuevo-body')[0].scrollTop = 0;
+}
+
+function cerrarNuevoVehiculoModal(){
+  nuevoVehiculoModal.classList.add('hidden');
+  liberarLockActivo();
+}
+
+document.getElementById('nv-cerrar').addEventListener('click', cerrarNuevoVehiculoModal);
+document.getElementById('nv-cancelar-btn').addEventListener('click', cerrarNuevoVehiculoModal);
+
+nvGuardar.addEventListener('click', async () => {
+  nvError.textContent = '';
+
+  const nombre = nvNombre.value.trim();
+  if(!nombre){
+    nvError.textContent = 'Completá el nombre del vehículo.';
+    return;
+  }
+
+  nvGuardar.disabled = true;
+  nvGuardar.textContent = 'Guardando...';
+
+  try{
+    await guardarVehiculoFirestore_(nombre, nvNombreOriginal.value);
+    cerrarNuevoVehiculoModal();
+  }catch(err){
+    nvError.textContent = 'No se pudo guardar: ' + err.message;
+  }finally{
+    nvGuardar.disabled = false;
+    nvGuardar.textContent = 'Guardar';
+  }
+});
+
+btnGuardar.addEventListener('click', async () => {
+  nuevoError.textContent = '';
+
+  const vehiculo = nmVehiculo.value.trim();
+
+  if(!vehiculo){
+    nuevoError.textContent = 'Completá el vehículo.';
+    return;
+  }
+  const vehiculoExiste = vehiculos.some(v => String(v['Vehiculo']||'').trim().toLowerCase() === vehiculo.toLowerCase());
+  if(!vehiculoExiste){
+    nuevoError.textContent = `"${vehiculo}" no está cargado en Vehículos. Agregalo primero desde esa pestaña.`;
+    return;
+  }
+
+  const payload = {
+    vehiculo,
+    fecha: nmFecha.value,
+    tipoServicio: nmTipo.value.trim(),
+    taller: nmTaller.value.trim(),
+    concepto: nmConcepto.value.trim(),
+    kilometraje: limpiarKmParaEnvio(nmKm.value.trim()),
+    notas: nmNotas.value.trim()
+  };
+  if(nmEditId.value) payload.id = nmEditId.value;
+
+  btnGuardar.disabled = true;
+  btnGuardar.textContent = 'Guardando...';
+
+  try{
+    await guardarMovimientoFirestore_(payload);
+    cerrarNuevoModal();
+  }catch(err){
+    nuevoError.textContent = 'No se pudo guardar: ' + err.message;
+  }finally{
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = 'Guardar';
+  }
+});
+/* =================================================== */
+
+iniciarLogin();
+
+/* ============== PWA: registro del Service Worker ============== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => {
+      console.warn('No se pudo registrar el Service Worker:', err);
+    });
+  });
+}
+/* ================================================================ */
+</script>
+</body>
+</html>
