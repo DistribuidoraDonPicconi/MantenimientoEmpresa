@@ -608,15 +608,6 @@ const CONFIG = {
 };
 /* ============================================= */
 
-/* ============== ⚠️ TEMPORAL: SALTEAR LOGIN PARA PROBAR ⚠️ ==============
-   Poner SALTAR_LOGIN_TEMP en false (o borrar este bloque y las líneas
-   marcadas más abajo) antes de subir la app de verdad. Mientras esté en
-   true, también hace falta que firestore.rules esté con los permisos
-   abiertos temporalmente (ver firestore.rules.PRUEBA-TEMPORAL). */
-const SALTAR_LOGIN_TEMP = true;
-const ROL_PRUEBA_TEMP = 'admin'; // 'admin' | 'colaborador' | 'visitante'
-/* ======================================================================= */
-
 /* ============== FIREBASE ============== */
 firebase.initializeApp(CONFIG.firebaseConfig);
 const auth = firebase.auth();
@@ -673,25 +664,6 @@ function iniciarLogin(){
   });
 }
 
-auth.onAuthStateChanged(async (user) => {
-  if(!user){
-    if(SALTAR_LOGIN_TEMP){ // ⚠️ TEMPORAL: ver bloque de arriba
-      miEmail = 'prueba-local@temporal';
-      miRol = ROL_PRUEBA_TEMP;
-      try{
-        aplicarPermisosUI();
-        ocultarLogin();
-        await cargarDatos();
-      }catch(err){
-        loginError.textContent = 'No se pudo cargar la app: ' + err.message;
-      }
-      return;
-    }
-    miEmail = null;
-    miRol = null;
-    mostrarLogin();
-    return;
-  }
   loginChecking.style.display = 'block';
   googleBtnContainer.style.display = 'none';
   miEmail = String(user.email || '').trim().toLowerCase();
