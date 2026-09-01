@@ -664,6 +664,13 @@ function iniciarLogin(){
   });
 }
 
+auth.onAuthStateChanged(async (user) => {
+  if(!user){
+    miEmail = null;
+    miRol = null;
+    mostrarLogin();
+    return;
+  }
   loginChecking.style.display = 'block';
   googleBtnContainer.style.display = 'none';
   miEmail = String(user.email || '').trim().toLowerCase();
