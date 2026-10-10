@@ -160,7 +160,7 @@
     background:#fff; box-shadow:0 1px 3px rgba(22,48,92,0.08);
   }
   .mov-scroll{ overflow:auto; -webkit-overflow-scrolling:touch; }
-  table.mov{ border-collapse:separate; border-spacing:0; width:100%; min-width:1360px; }
+  table.mov{ border-collapse:separate; border-spacing:0; width:100%; min-width:1780px; }
   table.mov th{
     position:sticky; top:0; background:#fff; z-index:1;
     text-align:center; font-size:13.5px; color:#1a1f2b; font-weight:800;
@@ -369,6 +369,91 @@
   #login-screen .login-error{ color:var(--rojo); font-size:13.5px; font-weight:600; margin-top:18px; max-width:300px; min-height:18px; }
   #login-screen .login-checking{ color:var(--texto-tenue); font-size:14px; }
   #google-btn-container{ min-height:44px; }
+
+  /* Modal de configuración (intervalos por ítem) */
+  #config-modal{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(17,22,36,0.55);
+    display:flex; align-items:flex-start; justify-content:center;
+  }
+  #config-modal.hidden{ display:none; }
+  .cfg-intro{ font-size:13px; color:var(--texto-tenue); line-height:1.4; margin:0 0 12px; }
+  .cfg-head, .cfg-row{
+    display:grid; grid-template-columns:1fr 84px 64px 34px; gap:6px; align-items:center;
+  }
+  .cfg-head{ font-size:11.5px; font-weight:800; color:var(--texto-tenue); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; padding:0 2px; }
+  .cfg-head span:nth-child(2), .cfg-head span:nth-child(3){ text-align:center; }
+  .cfg-row{ margin-bottom:8px; }
+  .cfg-row input{
+    width:100%; padding:10px 9px; border-radius:10px; border:1px solid var(--azul-borde);
+    background:#fff; font-size:15px; outline:none; color:#1a1f2b; min-width:0;
+  }
+  .cfg-row input:focus{ border-color:var(--azul); }
+  .cfg-row input.cfg-km, .cfg-row input.cfg-meses{ text-align:center; }
+  .cfg-row .cfg-del{
+    width:34px; height:38px; border:none; border-radius:10px; cursor:pointer;
+    background:#fdecea; color:var(--rojo); font-size:20px; line-height:1;
+  }
+  .cfg-row .cfg-del:active{ opacity:0.8; }
+  .cfg-add{
+    width:100%; padding:11px; margin-top:4px; border-radius:11px; cursor:pointer;
+    border:1.5px dashed var(--azul-borde); background:var(--azul-suave); color:var(--azul);
+    font-size:14.5px; font-weight:700;
+  }
+  .cfg-add:active{ background:var(--azul-borde); }
+
+  /* ===== Estados, vencimientos, ficha ===== */
+  .pill-tabs button{ padding:11px 4px; font-size:14px; }
+  .badges{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .badge{
+    display:inline-block; padding:4px 10px; border-radius:999px;
+    font-size:12.5px; font-weight:800; white-space:nowrap; line-height:1.2;
+  }
+  .badge.ok{ background:#e3f4ea; color:var(--verde); }
+  .badge.warn{ background:#fff1cf; color:#9a6300; }
+  .badge.bad{ background:#fdecea; color:var(--rojo); }
+  .badge.none{ background:#eef1f6; color:var(--texto-tenue); }
+  table.clientes td.estado{ padding:9px 8px; }
+  .v-veh{ font-weight:700; font-size:15px; color:#1a1f2b; }
+  .v-item{ font-size:12.5px; color:var(--azul); font-weight:700; margin-top:2px; }
+  .v-vence{ font-size:13px; font-weight:700; line-height:1.4; color:#1a1f2b; }
+  .v-det{ font-size:11.5px; color:var(--texto-tenue); margin-top:4px; line-height:1.3; font-weight:600; }
+  .venc-resumen{ display:flex; gap:8px; flex-wrap:wrap; margin:2px 0 10px; }
+  table.mov td.ultimo{ font-weight:800; color:var(--verde); }
+
+  #ficha-modal, #km-modal, #import-modal{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(17,22,36,0.55);
+    display:flex; align-items:flex-start; justify-content:center;
+  }
+  #ficha-modal.hidden, #km-modal.hidden, #import-modal.hidden{ display:none; }
+  .ficha-km{ font-size:14px; color:var(--texto-tenue); margin-bottom:12px; }
+  .ficha-km strong{ color:#1a1f2b; font-size:16px; }
+  .ficha-item{
+    border:1px solid var(--linea); border-left-width:5px; border-radius:12px;
+    padding:10px 12px; margin-bottom:10px; background:#fff;
+  }
+  .ficha-item.n3{ border-left-color:var(--rojo); }
+  .ficha-item.n2{ border-left-color:#e0a100; }
+  .ficha-item.n1{ border-left-color:var(--verde); }
+  .ficha-item.n0{ border-left-color:#c3cad9; }
+  .fi-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; }
+  .fi-top b{ font-size:15.5px; color:#111624; }
+  .fi-det{ font-size:13px; color:var(--texto-tenue); line-height:1.5; }
+  .fi-det strong{ color:#1a1f2b; }
+  .fi-det.est{ margin-top:3px; font-weight:700; }
+
+  .cfg-sec{
+    font-size:12.5px; font-weight:800; color:var(--azul-osc); text-transform:uppercase;
+    letter-spacing:0.3px; margin:22px 0 8px;
+  }
+  .cfg-aviso-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cfg-aviso-grid label{ margin:0 0 4px; font-size:13px; text-align:left; }
+  #import-text{ min-height:180px; font-size:14px; }
+
+  .fab-accion.registrar{ background:var(--verde); box-shadow:0 6px 16px rgba(31,138,76,0.4); }
+  .fab-accion.km{ background:#3a7bd5; box-shadow:0 6px 16px rgba(58,123,213,0.4); }
+  .fab-accion.ficha{ background:#16305c; box-shadow:0 6px 16px rgba(22,48,92,0.4); }
 </style>
 </head>
 <body>
@@ -430,6 +515,15 @@
 </div>
 
 <div id="fab-acciones" class="fab-acciones hidden">
+  <button id="fab-registrar" class="fab-accion registrar" aria-label="Registrar servicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+  </button>
+  <button id="fab-ficha" class="fab-accion ficha hidden" aria-label="Ver ficha del vehículo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+  </button>
+  <button id="fab-km" class="fab-accion km hidden" aria-label="Actualizar kilometraje">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+  </button>
   <button id="fab-copiar" class="fab-accion copiar" aria-label="Copiar movimiento">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
   </button>
@@ -490,6 +584,22 @@
         </div>
       </div>
 
+      <label for="nm-item">Ítem (para calcular el próximo vencimiento)</label>
+      <input type="text" id="nm-item" placeholder="Ej: Service" list="lista-items" autocomplete="off">
+      <datalist id="lista-items"></datalist>
+
+      <div class="nm-servicio-grid">
+        <div>
+          <label for="nm-prox-km">Próximo km</label>
+          <input type="text" inputmode="numeric" id="nm-prox-km" placeholder="Automático">
+        </div>
+        <div>
+          <label for="nm-prox-fecha">Próxima fecha</label>
+          <input type="date" id="nm-prox-fecha">
+        </div>
+      </div>
+      <div class="nuevo-hint">Se completan solos según la configuración (botón de engranaje). Si querés, los podés cambiar a mano.</div>
+
       <label for="nm-notas">Notas</label>
       <textarea id="nm-notas" rows="2" placeholder="Notas (opcional)"></textarea>
 
@@ -500,6 +610,89 @@
     <div class="nuevo-footer">
       <button class="btn-cancelar" id="nuevo-cancelar-btn">Cancelar</button>
       <button class="btn-guardar" id="nuevo-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="ficha-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3 id="ficha-titulo">Ficha</h3>
+      <button class="nuevo-close" id="ficha-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body" id="ficha-body"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="ficha-cerrar-btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="km-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3>Kilometraje actual</h3>
+      <button class="nuevo-close" id="km-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body">
+      <label style="margin-top:0">Vehículo</label>
+      <div id="km-vehiculo" style="font-size:16px;font-weight:700;color:#1a1f2b;"></div>
+      <label for="km-input">Km actual</label>
+      <input type="text" inputmode="numeric" id="km-input" placeholder="Ej: 275.000" autocomplete="off">
+      <div class="nuevo-hint" id="km-hint"></div>
+    </div>
+    <div class="nuevo-error" id="km-error"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="km-cancelar-btn">Cancelar</button>
+      <button class="btn-guardar" id="km-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="import-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3>Importar desde Excel</h3>
+      <button class="nuevo-close" id="import-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body">
+      <p class="cfg-intro">En Excel, seleccioná las filas <b>con la fila de títulos</b>, copiá (Ctrl+C) y pegalas abajo. Se reconocen las columnas Fecha, Vehículo, Tipo de Servicio, Taller, Concepto, Comentarios, Kilometraje Actual, Próximo kilometraje y Próximo por Fecha.</p>
+      <p class="cfg-intro">Si no hay columna "Ítem", se deduce del concepto con los ítems de la configuración (conviene guardarla antes). Los vehículos que no existan se crean y los movimientos repetidos se omiten.</p>
+      <textarea id="import-text" rows="8" placeholder="Pegá acá las filas copiadas de Excel..."></textarea>
+    </div>
+    <div class="nuevo-error" id="import-error"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="import-cancelar-btn">Cancelar</button>
+      <button class="btn-guardar" id="import-guardar">Importar</button>
+    </div>
+  </div>
+</div>
+
+<div id="config-modal" class="hidden">
+  <div class="nuevo-box">
+    <div class="nuevo-header">
+      <h3>Configuración</h3>
+      <button class="nuevo-close" id="cfg-cerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="nuevo-body">
+      <p class="cfg-intro">Definí cada cuánto se repite cada ítem. Al cargar un movimiento con ese ítem, la app calcula sola el próximo km y la próxima fecha. Dejá en blanco el que no aplique (por ejemplo, una batería solo por meses).</p>
+      <div class="cfg-head"><span>Ítem</span><span>Cada (km)</span><span>Meses</span><span></span></div>
+      <div id="cfg-lista"></div>
+      <button class="cfg-add" id="cfg-agregar">+ Agregar ítem</button>
+
+      <div class="cfg-sec">Avisos</div>
+      <p class="cfg-intro">Un ítem pasa a "Por vencer" (amarillo) cuando falta menos que esto. Al pasarse del km o de la fecha, queda "Vencido" (rojo).</p>
+      <div class="cfg-aviso-grid">
+        <div><label for="cfg-aviso-km">Avisar con (km)</label><input type="text" inputmode="numeric" id="cfg-aviso-km" placeholder="1.000"></div>
+        <div><label for="cfg-aviso-dias">Avisar con (días)</label><input type="text" inputmode="numeric" id="cfg-aviso-dias" placeholder="30"></div>
+      </div>
+
+      <div class="cfg-sec">Herramientas</div>
+      <button class="cfg-add" id="cfg-importar">Importar historial desde Excel</button>
+    </div>
+    <div class="nuevo-error" id="cfg-error"></div>
+    <div class="nuevo-footer">
+      <button class="btn-cancelar" id="cfg-cancelar-btn">Cancelar</button>
+      <button class="btn-guardar" id="cfg-guardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -534,6 +727,9 @@
         <div class="sub">Distribuidora Don Picconi</div>
       </div>
       <div style="display:flex; gap:22px;">
+        <button class="icon-btn hidden" id="btn-config" aria-label="Configuración">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
         <button class="icon-btn hidden" id="btn-compartir" aria-label="Compartir">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </button>
@@ -549,6 +745,7 @@
 
   <div class="pill-tabs">
     <button id="tab-vehiculos" data-tab="vehiculos" class="active">Vehículos</button>
+    <button id="tab-venc" data-tab="vencimientos">Vencimientos</button>
     <button id="tab-mov" data-tab="movimientos">Movimientos</button>
   </div>
 
@@ -746,6 +943,9 @@ async function guardarMovimientoFirestore_(payload){
   const concepto = String(payload.concepto || '').trim();
   const kilometraje = payload.kilometraje === '' ? null : (parseFloat(payload.kilometraje) || 0);
   const notas = String(payload.notas || '').trim();
+  const item = String(payload.item || '').trim();
+  const proximoKm = (payload.proximoKm === '' || payload.proximoKm === undefined) ? null : (parseFloat(payload.proximoKm) || 0);
+  const proximaFecha = String(payload.proximaFecha || '').trim();
 
   if(!vehiculo) throw new Error('Falta el vehículo');
   if(!fecha) throw new Error('Falta la fecha');
@@ -763,6 +963,7 @@ async function guardarMovimientoFirestore_(payload){
     await ref.update({
       'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
       'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Item': item, 'Proximo Km': proximoKm, 'Proxima Fecha': proximaFecha,
       'Notas': notas
       // 'Usuario' NO se toca: se conserva el de quien cargó el
       // movimiento originalmente, no el de quien lo está editando ahora.
@@ -772,12 +973,14 @@ async function guardarMovimientoFirestore_(payload){
     await ref.set({
       'ID': ref.id, 'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
       'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Item': item, 'Proximo Km': proximoKm, 'Proxima Fecha': proximaFecha,
       'Usuario': miEmail, 'Notas': notas,
       'Fecha Real': firebase.firestore.FieldValue.serverTimestamp(),
       // Se fija una sola vez, acá, y nunca se vuelve a tocar: define la
       // posición fija del movimiento en la lista.
       'Orden': firebase.firestore.FieldValue.serverTimestamp()
     });
+    await subirKmVehiculo_(vehiculo, kilometraje);
   }
 
   await cargarDatos();
@@ -816,7 +1019,11 @@ async function guardarVehiculoFirestore_(nombreNuevoIn, nombreOriginalIn){
     }else{
       const yaExiste = await refNuevo.get();
       if(yaExiste.exists) throw new Error('Ya existe otro vehículo con ese nombre');
-      await refNuevo.set({ 'Vehiculo': nombreNuevo });
+      const datosOriginal = snapOriginal.data() || {};
+      const nuevosDatos = { 'Vehiculo': nombreNuevo };
+      if(datosOriginal['Km Actual'] !== undefined) nuevosDatos['Km Actual'] = datosOriginal['Km Actual'];
+      if(datosOriginal['Km Fecha'] !== undefined) nuevosDatos['Km Fecha'] = datosOriginal['Km Fecha'];
+      await refNuevo.set(nuevosDatos);
       await refOriginal.delete();
 
       // Renombrado en cascada: todos los movimientos de este vehículo
@@ -853,6 +1060,9 @@ async function eliminarVehiculoFirestore_(nombreIn){
 
 let movimientos = [];
 let vehiculos = [];
+let itemsConfig = []; // [{ nombre, km, meses }] guardado en configuracion/intervalos
+let avisoKm = 1000;   // "por vencer" cuando faltan menos de estos km
+let avisoDias = 30;   // ... o menos de estos días
 let currentTab = 'vehiculos';
 let miRol = null; // 'admin', 'colaborador' o 'visitante'
 let miEmail = null; // email de Google de quien está logueado
@@ -863,6 +1073,7 @@ const searchWrapEl = document.getElementById('search-wrap');
 const headerTitle = document.getElementById('header-title');
 const btnRefresh = document.getElementById('btn-refresh');
 const btnCompartir = document.getElementById('btn-compartir');
+const btnConfig = document.getElementById('btn-config');
 
 function parsearFechaLocal_(valor){
   if(valor instanceof Date) return valor;
@@ -904,13 +1115,29 @@ function formatKm(n){
 async function cargarDatos(){
   btnRefresh.classList.add('spinning');
   try{
-    const [movSnap, vehSnap] = await Promise.all([
+    const [movSnap, vehSnap, cfgSnap] = await Promise.all([
       db.collection('mantenimientos').orderBy('Orden', 'asc').get(),
-      db.collection('vehiculos').get()
+      db.collection('vehiculos').get(),
+      // Si todavía no se publicaron las reglas para "configuracion", no
+      // rompemos la carga del resto: simplemente queda sin intervalos.
+      db.collection('configuracion').doc('intervalos').get().catch(() => null)
     ]);
     movimientos = movSnap.docs.map(d => Object.assign({}, d.data(), { ID: d.id }));
     vehiculos = vehSnap.docs.map(d => Object.assign({}, d.data(), { _id: d.id }));
+    itemsConfig = (cfgSnap && cfgSnap.exists && Array.isArray(cfgSnap.data().items))
+      ? cfgSnap.data().items.map(i => ({
+          nombre: String(i.nombre || '').trim(),
+          km: Number(i.km) || 0,
+          meses: Number(i.meses) || 0
+        })).filter(i => i.nombre)
+      : [];
+    {
+      const cfg = (cfgSnap && cfgSnap.exists) ? cfgSnap.data() : {};
+      avisoKm = (cfg.avisoKm === undefined || cfg.avisoKm === null || isNaN(Number(cfg.avisoKm))) ? 1000 : Number(cfg.avisoKm);
+      avisoDias = (cfg.avisoDias === undefined || cfg.avisoDias === null || isNaN(Number(cfg.avisoDias))) ? 30 : Number(cfg.avisoDias);
+    }
     actualizarListaVehiculos();
+    actualizarListaItems();
     if(currentTab === 'movimientos') irAlFondoMovimientos = true;
     render();
   }catch(err){
@@ -931,106 +1158,41 @@ let ultimaListaVehiculosVisible = [];
 // Calcula, para cada vehículo, la fecha y el kilometraje de su
 // movimiento más reciente (a partir de los movimientos ya cargados;
 // no se guarda como campo aparte en Firestore).
-function calcularResumenVehiculos(){
-  return vehiculos
-    .map(v => {
-      const nombre = String(v['Vehiculo'] || '').trim();
-      const propios = movimientos
-        .filter(m => String(m['Vehiculo'] || '').trim() === nombre)
-        .slice()
-        .sort((a,b) =>
-          fechaComparable_(a['Fecha']) - fechaComparable_(b['Fecha']) ||
-          ordenComparable_(a['Orden']) - ordenComparable_(b['Orden'])
-        );
-      const ultimo = propios[propios.length - 1];
-      return {
-        nombre,
-        fecha: ultimo ? (ultimo['Fecha'] || '') : '',
-        km: ultimo && ultimo['Kilometraje'] !== null && ultimo['Kilometraje'] !== undefined ? ultimo['Kilometraje'] : null,
-        cantidad: propios.length
-      };
-    })
-    .filter(v => v.nombre);
-}
+ // se redefine más abajo
 
-function renderTablaVehiculos(lista, mensajeVacio){
-  ultimaListaVehiculosVisible = lista;
 
-  if(!lista.length){
-    mainEl.innerHTML = `<div class="state-msg">${mensajeVacio}</div>`;
-    return;
-  }
 
-  const filas = lista.map(v => {
-    const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
-    return `<tr class="cliente-row" data-vehiculo="${v.nombre.replace(/"/g,'&quot;')}">
-      <td class="nombre">${v.nombre}</td>
-      <td class="fecha">${formatFecha(v.fecha)}</td>
-      <td class="km ${claseKm}">${formatKm(v.km)}</td>
-    </tr>`;
-  }).join('');
 
-  mainEl.innerHTML = `
-    <div class="stock-table-wrap">
-      <div class="clientes-scroll">
-        <table class="clientes">
-          <colgroup>
-            <col><col style="width:112px"><col style="width:110px">
-          </colgroup>
-          <thead>
-            <tr>
-              <th class="nombre">Vehículo</th>
-              <th>Último service</th>
-              <th>Km</th>
-            </tr>
-          </thead>
-          <tbody>${filas}</tbody>
-        </table>
-      </div>
-    </div>`;
-
-  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
-    tr.addEventListener('click', () => {
-      const nombre = tr.dataset.vehiculo;
-      vehiculoSeleccionadoNombre = (vehiculoSeleccionadoNombre === nombre) ? null : nombre;
-      actualizarSeleccionUI();
-    });
-  });
-  actualizarSeleccionUI();
-}
-
-function renderVehiculos(filtro){
-  const lista = calcularResumenVehiculos()
-    .filter(v => {
-      if(!filtro) return true;
-      return v.nombre.toLowerCase().includes(filtro.toLowerCase());
-    })
-    .sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
-
-  renderTablaVehiculos(lista, 'Sin vehículos que coincidan.');
-}
 
 /* ============== Pestaña Movimientos ============== */
 function renderMovimientos(filtro){
   const ordenados = movimientos;
+  const idsUltimos = new Set([...ultimosPorItem_(movimientos).values()].map(m => m['ID']));
 
   const filas = ordenados
     .filter(mov => {
       if(!filtro) return true;
-      const texto = `${mov['Vehiculo']||''} ${mov['Tipo de Servicio']||''} ${mov['Taller']||''} ${mov['Concepto']||''}`.toLowerCase();
+      const texto = `${mov['Vehiculo']||''} ${mov['Tipo de Servicio']||''} ${mov['Taller']||''} ${mov['Item']||''} ${mov['Concepto']||''}`.toLowerCase();
       return texto.includes(filtro.toLowerCase());
     })
     .map(mov => {
       const km = mov['Kilometraje'];
       const claseKm = (km === null || km === undefined || km === '') ? 'zero' : '';
+      const esUltimo = idsUltimos.has(mov['ID']);
+      const pkm = mov['Proximo Km'];
+      const clasePkm = (pkm === null || pkm === undefined || pkm === '') ? 'zero' : '';
       return `<tr class="mov-row" data-id="${mov['ID'] || ''}">
         <td class="fecha">${formatFecha(mov[CONFIG.CAMPO_FECHA])}</td>
         <td class="cliente">${mov['Vehiculo'] || '-'}</td>
         <td>${mov['Tipo de Servicio'] || '-'}</td>
         <td>${mov['Taller'] || '-'}</td>
+        <td>${mov['Item'] || '-'}</td>
         <td class="concepto">${mov['Concepto'] || '-'}</td>
         <td class="km ${claseKm}">${formatKm(km)}</td>
+        <td class="km ${clasePkm}">${formatKm(pkm)}</td>
+        <td class="fecha">${mov['Proxima Fecha'] ? formatFecha(mov['Proxima Fecha']) : '-'}</td>
         <td class="notas">${mov['Notas'] || '-'}</td>
+        <td class="ultimo">${esUltimo ? '✓' : ''}</td>
         <td class="usuario">${mov['Usuario'] || '-'}</td>
       </tr>`;
     }).join('');
@@ -1046,8 +1208,8 @@ function renderMovimientos(filtro){
         <table class="mov">
           <thead>
             <tr>
-              <th>Fecha</th><th>Vehículo</th><th>Tipo de Servicio</th><th>Taller</th>
-              <th>Concepto</th><th>Km</th><th>Notas</th><th>Usuario</th>
+              <th>Fecha</th><th>Vehículo</th><th>Tipo de Servicio</th><th>Taller</th><th>Ítem</th>
+              <th>Concepto</th><th>Km</th><th>Próx. km</th><th>Próx. fecha</th><th>Notas</th><th>Último</th><th>Usuario</th>
             </tr>
           </thead>
           <tbody>${filas}</tbody>
@@ -1077,8 +1239,14 @@ function actualizarListaVehiculos(){
     talleres.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
 }
 
+function actualizarListaItems(){
+  const nombres = itemsConfig.map(i => i.nombre).sort((a,b) => a.localeCompare(b, 'es'));
+  document.getElementById('lista-items').innerHTML =
+    nombres.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+}
+
 /* ============== Scroll / tabs ============== */
-const scrollState = { vehiculos: 0, movimientos: { top: 0, left: 0 } };
+const scrollState = { vehiculos: 0, vencimientos: 0, movimientos: { top: 0, left: 0 } };
 let irAlFondoMovimientos = false;
 
 function guardarScrollActual(){
@@ -1089,7 +1257,7 @@ function guardarScrollActual(){
       scrollState.movimientos.left = movScroll.scrollLeft;
     }
   }else{
-    scrollState.vehiculos = mainEl.scrollTop;
+    scrollState[currentTab] = mainEl.scrollTop;
   }
 }
 
@@ -1107,22 +1275,24 @@ function restaurarScroll(){
       }
     }
   }else{
-    mainEl.scrollTop = scrollState.vehiculos;
+    mainEl.scrollTop = scrollState[currentTab] || 0;
   }
 }
 
 function render(){
   const filtro = searchEl.value.trim();
   mainEl.classList.toggle('grid-mode', currentTab === 'movimientos');
-  mainEl.classList.toggle('ancho-tabla', currentTab === 'vehiculos');
+  mainEl.classList.toggle('ancho-tabla', currentTab !== 'movimientos');
   fabNuevo.classList.toggle('hidden', miRol === 'visitante');
   btnCompartir.classList.remove('hidden');
+  headerTitle.textContent = TITULOS_TAB[currentTab];
   if(currentTab === 'vehiculos'){
-    headerTitle.textContent = 'Vehículos';
     searchEl.placeholder = 'Buscar vehículo...';
     renderVehiculos(filtro);
+  }else if(currentTab === 'vencimientos'){
+    searchEl.placeholder = 'Buscar vehículo o ítem...';
+    renderVencimientos(filtro);
   }else{
-    headerTitle.textContent = 'Movimientos';
     searchEl.placeholder = 'Buscar movimiento...';
     renderMovimientos(filtro);
   }
@@ -1143,10 +1313,11 @@ function setTab(tab){
   guardarScrollActual();
   currentTab = tab;
   document.getElementById('tab-vehiculos').classList.toggle('active', tab === 'vehiculos');
+  document.getElementById('tab-venc').classList.toggle('active', tab === 'vencimientos');
   document.getElementById('tab-mov').classList.toggle('active', tab === 'movimientos');
   deseleccionarFila();
   render();
-  if(tab === 'vehiculos') cargarDatos();
+  if(tab !== 'movimientos') cargarDatos();
 }
 
 document.getElementById('tab-vehiculos').addEventListener('click', () => setTab('vehiculos'));
@@ -1155,6 +1326,7 @@ document.getElementById('tab-mov').addEventListener('click', () => setTab('movim
 btnRefresh.addEventListener('click', cargarDatos);
 searchEl.addEventListener('input', () => {
   scrollState.vehiculos = 0;
+  scrollState.vencimientos = 0;
   scrollState.movimientos = { top: 0, left: 0 };
   render();
 });
@@ -1180,7 +1352,7 @@ async function generarImagenTabla(){
     throw new Error('No se pudo cargar la librería para generar imágenes. Revisá tu conexión a internet.');
   }
   const esMovimientos = currentTab === 'movimientos';
-  const titulo = currentTab === 'vehiculos' ? 'Vehículos' : 'Movimientos';
+  const titulo = TITULOS_TAB[currentTab];
   const wrap = mainEl.querySelector(esMovimientos ? '.mov-table-wrap' : '.stock-table-wrap');
   if(!wrap) throw new Error('No hay tabla para capturar.');
 
@@ -1244,7 +1416,7 @@ btnCompartirWhatsapp.addEventListener('click', async () => {
 
   if(navigator.canShare && navigator.canShare({ files: [archivo] })){
     try{
-      await navigator.share({ files: [archivo], title: currentTab === 'vehiculos' ? 'Vehículos' : 'Movimientos de mantenimiento' });
+      await navigator.share({ files: [archivo], title: TITULOS_TAB[currentTab] });
       marcarCompartirOk();
       cerrarCompartirModal();
       return;
@@ -1265,11 +1437,9 @@ btnCompartir.addEventListener('click', async () => {
     if(!blob) throw new Error('No se pudo generar la imagen.');
 
     compartirBlobActual = blob;
-    compartirNombreActual = currentTab === 'vehiculos'
-      ? `vehiculos-${fechaParaArchivo()}.png`
-      : `movimientos-mantenimiento-${fechaParaArchivo()}.png`;
+    compartirNombreActual = `${currentTab}-${fechaParaArchivo()}.png`;
     compartirUrlActual = URL.createObjectURL(blob);
-    compartirTitulo.textContent = currentTab === 'vehiculos' ? 'Imagen de vehículos' : 'Imagen de movimientos';
+    compartirTitulo.textContent = 'Imagen de ' + TITULOS_TAB[currentTab].toLowerCase();
     compartirPreviewImg.src = compartirUrlActual;
     compartirModal.classList.remove('hidden');
   }catch(err){
@@ -1314,15 +1484,22 @@ function actualizarIconosFabAcciones(){
 // rechaza esas acciones aunque alguien fuerce el botón.
 function aplicarPermisosUI(){
   const esVisitante = miRol === 'visitante';
-  fabEditar.classList.toggle('hidden', miRol !== 'admin');
-  fabEliminar.classList.toggle('hidden', miRol !== 'admin');
+  const admin = miRol === 'admin';
+  const t = currentTab;
+  fabEditar.classList.toggle('hidden', !admin || t === 'vencimientos');
+  fabEliminar.classList.toggle('hidden', !admin || t === 'vencimientos');
+  fabCopiar.classList.toggle('hidden', t === 'vencimientos' || (esVisitante && t !== 'vehiculos'));
+  fabFicha.classList.toggle('hidden', t !== 'vehiculos');
+  fabKm.classList.toggle('hidden', t !== 'vehiculos' || esVisitante);
+  fabRegistrar.classList.toggle('hidden', t !== 'vencimientos' || esVisitante);
+  btnConfig.classList.toggle('hidden', !admin);
   fabNuevo.classList.toggle('hidden', esVisitante);
-  if(esVisitante) fabAcciones.classList.add('hidden');
 }
 
 function actualizarSeleccionUI(){
   actualizarIconosFabAcciones();
   aplicarPermisosUI();
+  let haySeleccion = false;
   if(currentTab === 'vehiculos'){
     let encontrada = false;
     mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
@@ -1331,7 +1508,16 @@ function actualizarSeleccionUI(){
       if(esta) encontrada = true;
     });
     if(vehiculoSeleccionadoNombre && !encontrada) vehiculoSeleccionadoNombre = null;
-    fabAcciones.classList.toggle('hidden', miRol === 'visitante' || !vehiculoSeleccionadoNombre);
+    haySeleccion = !!vehiculoSeleccionadoNombre;
+  }else if(currentTab === 'vencimientos'){
+    let encontrada = false;
+    mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+      const esta = tr.dataset.key === vencSeleccionadaKey;
+      tr.classList.toggle('selected', esta);
+      if(esta) encontrada = true;
+    });
+    if(vencSeleccionadaKey && !encontrada) vencSeleccionadaKey = null;
+    haySeleccion = !!vencSeleccionadaKey;
   }else{
     let encontrada = false;
     mainEl.querySelectorAll('tr.mov-row').forEach(tr => {
@@ -1340,13 +1526,16 @@ function actualizarSeleccionUI(){
       if(esta) encontrada = true;
     });
     if(filaSeleccionadaId && !encontrada) filaSeleccionadaId = null;
-    fabAcciones.classList.toggle('hidden', miRol === 'visitante' || !filaSeleccionadaId);
+    haySeleccion = !!filaSeleccionadaId;
   }
+  const soloLectura = miRol === 'visitante' && currentTab !== 'vehiculos';
+  fabAcciones.classList.toggle('hidden', !haySeleccion || soloLectura);
 }
 
 function deseleccionarFila(){
   filaSeleccionadaId = null;
   vehiculoSeleccionadoNombre = null;
+  vencSeleccionadaKey = null;
   actualizarSeleccionUI();
 }
 
@@ -1376,6 +1565,37 @@ function limpiarKmParaEnvio(valorFormateado){
 }
 nmKm.addEventListener('input', () => { nmKm.value = formatearKm(nmKm.value); });
 
+/* ---- Próximo vencimiento automático según la configuración ---- */
+const nmItem = document.getElementById('nm-item');
+const nmProxKm = document.getElementById('nm-prox-km');
+const nmProxFecha = document.getElementById('nm-prox-fecha');
+let proximoManual = false; // true si la persona tocó a mano los campos "próximo"
+
+function intervaloDe_(nombreItem){
+  const n = String(nombreItem || '').trim().toLowerCase();
+  if(!n) return null;
+  return itemsConfig.find(i => i.nombre.toLowerCase() === n) || null;
+}
+
+function sumarMeses_(iso, meses){
+  return sumarMesesISO_(iso, meses);
+}
+
+function recalcularProximos(){
+  if(proximoManual) return;
+  const it = intervaloDe_(nmItem.value);
+  if(!it) return; // ítem sin configurar: se deja lo que haya
+  const km = parseInt(limpiarKmParaEnvio(nmKm.value), 10);
+  nmProxKm.value = (it.km && km) ? formatearKm(String(km + it.km)) : '';
+  nmProxFecha.value = (it.meses && nmFecha.value) ? sumarMeses_(nmFecha.value, it.meses) : '';
+}
+
+nmItem.addEventListener('input', recalcularProximos);
+nmKm.addEventListener('input', recalcularProximos);
+nmFecha.addEventListener('change', recalcularProximos);
+nmProxKm.addEventListener('input', () => { nmProxKm.value = formatearKm(nmProxKm.value); proximoManual = true; });
+nmProxFecha.addEventListener('input', () => { proximoManual = true; });
+
 function numeroKmAInputStr(num){
   if(num === undefined || num === null || num === '') return '';
   const n = parseFloat(num);
@@ -1383,10 +1603,10 @@ function numeroKmAInputStr(num){
   return n.toLocaleString('es-AR');
 }
 
-function abrirNuevoModal(mov, modoEditar){
+function abrirNuevoModal(mov, modoEditar, modoRegistrar){
   const precargar = !!mov;
   nmEditId.value = (precargar && modoEditar) ? (mov['ID'] || '') : '';
-  nuevoTitulo.textContent = modoEditar ? 'Editar movimiento' : (precargar ? 'Copiar movimiento' : 'Nuevo movimiento');
+  nuevoTitulo.textContent = modoEditar ? 'Editar movimiento' : (modoRegistrar ? 'Registrar servicio' : (precargar ? 'Copiar movimiento' : 'Nuevo movimiento'));
 
   nmVehiculo.value = precargar ? (mov['Vehiculo'] || '') : '';
   nmFecha.value = precargar && mov[CONFIG.CAMPO_FECHA]
@@ -1399,6 +1619,21 @@ function abrirNuevoModal(mov, modoEditar){
   nmKm.value = precargar ? numeroKmAInputStr(mov['Kilometraje']) : '';
   nmNotas.value = precargar ? (mov['Notas'] || '') : '';
 
+  nmItem.value = precargar ? (mov['Item'] || '') : '';
+  if(precargar && modoEditar){
+    // Al editar se muestran los valores ya guardados; solo se recalculan
+    // si la persona cambia el ítem, el km o la fecha.
+    nmProxKm.value = numeroKmAInputStr(mov['Proximo Km']);
+    nmProxFecha.value = mov['Proxima Fecha'] || '';
+    proximoManual = false;
+  }else{
+    // Nuevo o copia: se calculan de nuevo según la configuración.
+    nmProxKm.value = '';
+    nmProxFecha.value = '';
+    proximoManual = false;
+    recalcularProximos();
+  }
+
   // El usuario queda bloqueado con el email de quien está logueado
   // ahora. Al editar un movimiento existente, se conserva el usuario
   // que lo cargó originalmente en vez de pisarlo con el del editor.
@@ -1406,7 +1641,7 @@ function abrirNuevoModal(mov, modoEditar){
 
   nuevoError.textContent = '';
   btnGuardar.disabled = false;
-  btnGuardar.textContent = modoEditar ? 'Guardar cambios' : (precargar ? 'Guardar copia' : 'Guardar');
+  btnGuardar.textContent = modoEditar ? 'Guardar cambios' : ((precargar && !modoRegistrar) ? 'Guardar copia' : 'Guardar');
   nuevoModal.classList.remove('hidden');
   posicionarNuevoBox(document.querySelector('#nuevo-modal .nuevo-box'));
   document.querySelectorAll('#nuevo-modal .nuevo-body')[0].scrollTop = 0;
@@ -1497,7 +1732,7 @@ fabEditar.addEventListener('click', async () => {
 });
 
 fabCopiar.addEventListener('click', () => {
-  if(miRol === 'visitante') return;
+  if(miRol === 'visitante' && currentTab !== 'vehiculos') return;
   if(currentTab === 'vehiculos'){
     const nombre = vehiculoSeleccionadoNombre;
     deseleccionarFila();
@@ -1638,6 +1873,9 @@ btnGuardar.addEventListener('click', async () => {
     taller: nmTaller.value.trim(),
     concepto: nmConcepto.value.trim(),
     kilometraje: limpiarKmParaEnvio(nmKm.value.trim()),
+    item: nmItem.value.trim(),
+    proximoKm: limpiarKmParaEnvio(nmProxKm.value.trim()),
+    proximaFecha: nmProxFecha.value,
     notas: nmNotas.value.trim()
   };
   if(nmEditId.value) payload.id = nmEditId.value;
@@ -1656,6 +1894,823 @@ btnGuardar.addEventListener('click', async () => {
   }
 });
 /* =================================================== */
+
+/* ============== Configuración: intervalos por ítem ============== */
+const configModal = document.getElementById('config-modal');
+const cfgLista = document.getElementById('cfg-lista');
+const cfgError = document.getElementById('cfg-error');
+const cfgGuardar = document.getElementById('cfg-guardar');
+const cfgAvisoKm = document.getElementById('cfg-aviso-km');
+const cfgAvisoDias = document.getElementById('cfg-aviso-dias');
+cfgAvisoKm.addEventListener('input', () => { cfgAvisoKm.value = formatearKm(cfgAvisoKm.value); });
+cfgAvisoDias.addEventListener('input', () => { cfgAvisoDias.value = cfgAvisoDias.value.replace(/[^0-9]/g, '').slice(0, 3); });
+
+// Sugerencias iniciales (tomadas de tu planilla de Excel). Solo se
+// muestran si todavía no hay nada configurado y no se guardan hasta
+// que toques "Guardar".
+const ITEMS_SUGERIDOS = [
+  { nombre: 'Service', km: 10000, meses: 12 },
+  { nombre: 'Amortiguadores', km: 50000, meses: 36 },
+  { nombre: 'Pastillas de freno', km: 50000, meses: 24 },
+  { nombre: 'Batería', km: 0, meses: 36 },
+  { nombre: 'Correa poly V', km: 0, meses: 60 }
+];
+
+function agregarFilaConfig(it){
+  const fila = document.createElement('div');
+  fila.className = 'cfg-row';
+
+  const inNombre = document.createElement('input');
+  inNombre.type = 'text'; inNombre.className = 'cfg-nombre';
+  inNombre.placeholder = 'Ej: Service'; inNombre.autocomplete = 'off';
+  inNombre.value = it ? it.nombre : '';
+
+  const inKm = document.createElement('input');
+  inKm.type = 'text'; inKm.inputMode = 'numeric'; inKm.className = 'cfg-km';
+  inKm.placeholder = '10.000';
+  inKm.value = (it && it.km) ? Number(it.km).toLocaleString('es-AR') : '';
+  inKm.addEventListener('input', () => { inKm.value = formatearKm(inKm.value); });
+
+  const inMeses = document.createElement('input');
+  inMeses.type = 'text'; inMeses.inputMode = 'numeric'; inMeses.className = 'cfg-meses';
+  inMeses.placeholder = '12';
+  inMeses.value = (it && it.meses) ? String(it.meses) : '';
+  inMeses.addEventListener('input', () => { inMeses.value = inMeses.value.replace(/[^0-9]/g, '').slice(0, 3); });
+
+  const btnDel = document.createElement('button');
+  btnDel.type = 'button'; btnDel.className = 'cfg-del'; btnDel.textContent = '×';
+  btnDel.setAttribute('aria-label', 'Quitar ítem');
+  btnDel.addEventListener('click', () => fila.remove());
+
+  fila.append(inNombre, inKm, inMeses, btnDel);
+  cfgLista.appendChild(fila);
+  return fila;
+}
+
+function abrirConfigModal(){
+  if(miRol !== 'admin') return;
+  cfgLista.innerHTML = '';
+  const base = itemsConfig.length ? itemsConfig : ITEMS_SUGERIDOS;
+  base.forEach(agregarFilaConfig);
+  cfgAvisoKm.value = nfmt_(avisoKm);
+  cfgAvisoDias.value = String(avisoDias);
+  cfgError.textContent = '';
+  cfgGuardar.disabled = false;
+  cfgGuardar.textContent = 'Guardar';
+  configModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#config-modal .nuevo-box'));
+  document.querySelector('#config-modal .nuevo-body').scrollTop = 0;
+}
+
+function cerrarConfigModal(){
+  configModal.classList.add('hidden');
+}
+
+btnConfig.addEventListener('click', abrirConfigModal);
+document.getElementById('cfg-cerrar').addEventListener('click', cerrarConfigModal);
+document.getElementById('cfg-cancelar-btn').addEventListener('click', cerrarConfigModal);
+document.getElementById('cfg-agregar').addEventListener('click', () => {
+  const fila = agregarFilaConfig(null);
+  fila.querySelector('.cfg-nombre').focus();
+  document.querySelector('#config-modal .nuevo-body').scrollTop = 99999;
+});
+
+cfgGuardar.addEventListener('click', async () => {
+  cfgError.textContent = '';
+  if(miRol !== 'admin'){
+    cfgError.textContent = 'Solo un administrador puede cambiar la configuración.';
+    return;
+  }
+
+  const items = [];
+  const vistos = new Set();
+  for(const fila of cfgLista.querySelectorAll('.cfg-row')){
+    const nombre = fila.querySelector('.cfg-nombre').value.trim();
+    const km = parseInt(limpiarKmParaEnvio(fila.querySelector('.cfg-km').value), 10) || 0;
+    const meses = parseInt(fila.querySelector('.cfg-meses').value, 10) || 0;
+    if(!nombre && !km && !meses) continue; // fila vacía
+    if(!nombre){ cfgError.textContent = 'Hay una fila con km o meses pero sin nombre de ítem.'; return; }
+    if(vistos.has(nombre.toLowerCase())){ cfgError.textContent = `El ítem "${nombre}" está repetido.`; return; }
+    if(!km && !meses){ cfgError.textContent = `"${nombre}" necesita km, meses o ambos.`; return; }
+    vistos.add(nombre.toLowerCase());
+    items.push({ nombre, km, meses });
+  }
+
+  const nuevoAvisoKm = parseInt(limpiarKmParaEnvio(cfgAvisoKm.value), 10);
+  const nuevoAvisoDias = parseInt(cfgAvisoDias.value, 10);
+  const aKm = isNaN(nuevoAvisoKm) ? 1000 : nuevoAvisoKm;
+  const aDias = isNaN(nuevoAvisoDias) ? 30 : nuevoAvisoDias;
+
+  cfgGuardar.disabled = true;
+  cfgGuardar.textContent = 'Guardando...';
+  try{
+    await db.collection('configuracion').doc('intervalos').set({ items, avisoKm: aKm, avisoDias: aDias });
+    itemsConfig = items;
+    avisoKm = aKm;
+    avisoDias = aDias;
+    actualizarListaItems();
+    cerrarConfigModal();
+    render();
+  }catch(err){
+    cfgError.textContent = (err && err.code === 'permission-denied')
+      ? 'Firebase rechazó el guardado: falta publicar la regla de "configuracion" en firestore.rules.'
+      : 'No se pudo guardar: ' + err.message;
+  }finally{
+    cfgGuardar.disabled = false;
+    cfgGuardar.textContent = 'Guardar';
+  }
+});
+/* ================================================================ */
+
+/* ============== Vencimientos, ficha, km actual e importación ============== */
+
+/* PURE-START */
+const MS_DIA = 86400000;
+
+function escHtml_(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function normTxt_(s){
+  return String(s == null ? '' : s).trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function nfmt_(n){
+  return Number(n).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+}
+
+// ---- Lectura de lo pegado desde Excel (tabulador) o de un CSV ----
+function parsearTabla_(texto){
+  const t = String(texto || '').replace(/\r\n?/g, '\n');
+  const primera = t.split('\n').find(l => l.trim()) || '';
+  const delim = primera.includes('\t') ? '\t' : (primera.includes(';') ? ';' : ',');
+  const filas = [];
+  let fila = [], cel = '', enComillas = false;
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if(enComillas){
+      if(c === '"'){
+        if(t[i + 1] === '"'){ cel += '"'; i++; } else { enComillas = false; }
+      }else{
+        cel += c;
+      }
+    }else if(c === '"' && cel === ''){
+      enComillas = true;
+    }else if(c === delim){
+      fila.push(cel); cel = '';
+    }else if(c === '\n'){
+      fila.push(cel); cel = ''; filas.push(fila); fila = [];
+    }else{
+      cel += c;
+    }
+  }
+  fila.push(cel); filas.push(fila);
+  return filas.filter(f => f.some(x => String(x).trim() !== ''));
+}
+
+// "18/09/2026" -> "2026-09-18". '' si viene vacío, null si es inválido.
+function fechaTextoAISO_(s){
+  const v = String(s == null ? '' : s).trim();
+  if(!v) return '';
+  let m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(!m) return null;
+  const d = Number(m[1]), mo = Number(m[2]);
+  let y = Number(m[3]);
+  if(y < 100) y += 2000;
+  if(mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const f = new Date(y, mo - 1, d);
+  if(f.getMonth() !== mo - 1) return null;
+  return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// "225.000 km" -> 225000. null si no hay número.
+function kmTextoANumero_(s){
+  const d = String(s == null ? '' : s).replace(/[^0-9]/g, '');
+  return d ? parseInt(d, 10) : null;
+}
+
+function sumarMesesISO_(iso, meses){
+  const [y, m, d] = iso.split('-').map(Number);
+  const f = new Date(y, m - 1 + meses, d);
+  if(f.getDate() !== d) f.setDate(0); // 31/01 + 1 mes -> último día de febrero
+  return `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(f.getDate()).padStart(2,'0')}`;
+}
+
+// Deduce el ítem a partir del concepto, usando los ítems configurados.
+const CLAVES_ITEM_ = ['service', 'amortiguador', 'pastilla', 'bateria', 'correa'];
+function inferirItem_(concepto, items){
+  const c = normTxt_(concepto);
+  if(!c || !items.length) return '';
+  const porLargo = items.slice().sort((a, b) => b.nombre.length - a.nombre.length);
+  for(const it of porLargo){
+    if(c.includes(normTxt_(it.nombre))) return it.nombre;
+  }
+  for(const clave of CLAVES_ITEM_){
+    if(c.includes(clave)){
+      const it = items.find(i => normTxt_(i.nombre).includes(clave));
+      if(it) return it.nombre;
+    }
+  }
+  return '';
+}
+
+// ctx = { items, vehMap: Map(nombre normalizado -> nombre), existentes: Set(clave) }
+function procesarImport_(filas, ctx){
+  const res = { nuevos: [], duplicados: 0, vacias: 0, invalidas: [], vehiculosNuevos: [] };
+  const idxHead = filas.findIndex(f => {
+    const n = f.map(normTxt_);
+    return n.includes('fecha') && n.includes('vehiculo');
+  });
+  if(idxHead < 0){
+    res.error = 'No encontré la fila de títulos. Tiene que incluir al menos "Fecha" y "Vehículo".';
+    return res;
+  }
+  const cols = {};
+  filas[idxHead].forEach((h, i) => { const n = normTxt_(h); if(n && !(n in cols)) cols[n] = i; });
+  const pick = (...nombres) => { for(const n of nombres){ if(n in cols) return cols[n]; } return -1; };
+  const iFecha = pick('fecha'), iVeh = pick('vehiculo'), iTipo = pick('tipo de servicio', 'tipo'),
+        iTaller = pick('taller'), iItem = pick('item'), iConc = pick('concepto'),
+        iNotas = pick('comentarios', 'notas'), iKm = pick('kilometraje actual', 'kilometraje', 'km'),
+        iPkm = pick('proximo kilometraje', 'proximo km'), iPf = pick('proximo por fecha', 'proxima fecha');
+  const get = (f, i) => (i >= 0 && i < f.length) ? String(f[i]).trim() : '';
+  const vistos = new Set(ctx.existentes);
+
+  filas.forEach((f, n) => {
+    if(n === idxHead) return;
+    if(normTxt_(get(f, iFecha)) === 'fecha') return; // encabezado repetido
+    const veh = get(f, iVeh);
+    const concepto = get(f, iConc), tipo = get(f, iTipo);
+    if(!get(f, iFecha) && !veh) return;
+    if(!concepto && !tipo){ res.vacias++; return; }
+    const fecha = fechaTextoAISO_(get(f, iFecha));
+    if(!fecha){ res.invalidas.push({ n: n + 1, motivo: 'fecha inválida' }); return; }
+    if(!veh){ res.invalidas.push({ n: n + 1, motivo: 'sin vehículo' }); return; }
+
+    const clave = `${fecha}|${normTxt_(veh)}|${normTxt_(concepto)}`;
+    if(vistos.has(clave)){ res.duplicados++; return; }
+    vistos.add(clave);
+
+    let canon = ctx.vehMap.get(normTxt_(veh));
+    if(!canon){
+      canon = veh;
+      ctx.vehMap.set(normTxt_(veh), veh);
+      res.vehiculosNuevos.push(veh);
+    }
+
+    const item = get(f, iItem) || inferirItem_(concepto, ctx.items);
+    const km = kmTextoANumero_(get(f, iKm));
+    let proximoKm = kmTextoANumero_(get(f, iPkm));
+    let proximaFecha = fechaTextoAISO_(get(f, iPf)) || '';
+    const cfg = ctx.items.find(i => normTxt_(i.nombre) === normTxt_(item));
+    if(cfg){
+      if(proximoKm === null && cfg.km && km !== null) proximoKm = km + cfg.km;
+      if(!proximaFecha && cfg.meses) proximaFecha = sumarMesesISO_(fecha, cfg.meses);
+    }
+    res.nuevos.push({
+      vehiculo: canon, fecha, tipoServicio: tipo, taller: get(f, iTaller), item,
+      concepto, kilometraje: km, notas: get(f, iNotas), proximoKm, proximaFecha
+    });
+  });
+  res.nuevos.sort((a, b) => a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0));
+  return res;
+}
+
+// ---- Vencimientos ----
+function compararMov_(a, b){
+  return (fechaComparable_(a['Fecha']) - fechaComparable_(b['Fecha'])) ||
+         (ordenComparable_(a['Orden']) - ordenComparable_(b['Orden']));
+}
+
+// Para cada (vehículo, ítem): el movimiento más reciente.
+function ultimosPorItem_(movs){
+  const mapa = new Map();
+  movs.forEach(m => {
+    const veh = String(m['Vehiculo'] || '').trim();
+    const item = String(m['Item'] || '').trim();
+    if(!veh || !item) return;
+    const k = veh + '||' + item.toLowerCase();
+    const prev = mapa.get(k);
+    if(!prev || !(compararMov_(m, prev) < 0)) mapa.set(k, m);
+  });
+  return mapa;
+}
+
+// Km actual: el que se cargó a mano en el vehículo; si no hay, el mayor de sus movimientos.
+function kmActualDe_(nombre, ctx){
+  const v = ctx.vehs.find(x => String(x['Vehiculo'] || '').trim() === nombre);
+  const bruto = v ? v['Km Actual'] : null;
+  if(bruto !== null && bruto !== undefined && bruto !== ''){
+    const manual = Number(bruto);
+    if(!isNaN(manual)) return manual;
+  }
+  let max = null;
+  ctx.movs.forEach(m => {
+    if(String(m['Vehiculo'] || '').trim() !== nombre) return;
+    const k = m['Kilometraje'];
+    if(k === null || k === undefined || k === '') return;
+    const n = Number(k);
+    if(!isNaN(n) && (max === null || n > max)) max = n;
+  });
+  return max;
+}
+
+// nivel: 0 sin datos, 1 al día, 2 por vencer, 3 vencido
+function evaluarVencimiento_(vehiculo, m, kmAct, ctx){
+  const vk = m['Proximo Km'];
+  const pkmBruto = (vk === null || vk === undefined || vk === '') ? null : Number(vk);
+  const tieneKm = pkmBruto !== null && !isNaN(pkmBruto);
+  const pf = m['Proxima Fecha'] ? String(m['Proxima Fecha']).slice(0, 10) : '';
+  const pfMs = pf ? fechaComparable_(pf) : null;
+  const kmRest = (tieneKm && kmAct !== null) ? pkmBruto - kmAct : null;
+  const diasRest = (pfMs !== null && !isNaN(pfMs)) ? Math.round((pfMs - ctx.hoy) / MS_DIA) : null;
+
+  let nivel = 0;
+  if(tieneKm || diasRest !== null){
+    nivel = 1;
+    if(kmRest !== null){
+      if(kmRest <= 0) nivel = 3; else if(kmRest <= ctx.avisoKm) nivel = Math.max(nivel, 2);
+    }
+    if(diasRest !== null){
+      if(diasRest < 0) nivel = 3; else if(diasRest <= ctx.avisoDias) nivel = Math.max(nivel, 2);
+    }
+  }
+  const faltaKm = tieneKm && kmAct === null && diasRest === null;
+  if(faltaKm) nivel = 0;
+  return {
+    vehiculo, item: String(m['Item'] || '').trim(), mov: m,
+    pkm: tieneKm ? pkmBruto : null, pf, kmRest, diasRest, nivel, faltaKm, kmAct
+  };
+}
+
+function detalleVenc_(e){
+  if(e.faltaKm) return 'Cargá el km actual del vehículo';
+  if(e.nivel === 0) return 'Sin vencimiento cargado';
+  const p = [];
+  if(e.kmRest !== null){
+    if(e.kmRest > 0) p.push(`faltan ${nfmt_(e.kmRest)} km`);
+    else if(e.kmRest === 0) p.push('llegó al km');
+    else p.push(`pasado por ${nfmt_(-e.kmRest)} km`);
+  }
+  if(e.diasRest !== null){
+    if(e.diasRest > 1) p.push(`en ${e.diasRest} días`);
+    else if(e.diasRest === 1) p.push('mañana');
+    else if(e.diasRest === 0) p.push('vence hoy');
+    else if(e.diasRest === -1) p.push('venció ayer');
+    else p.push(`venció hace ${-e.diasRest} días`);
+  }
+  return p.join(' · ');
+}
+
+function ordenUrgencia_(x, y){
+  if(y.nivel !== x.nivel) return y.nivel - x.nivel;
+  const dx = x.diasRest === null ? Infinity : x.diasRest;
+  const dy = y.diasRest === null ? Infinity : y.diasRest;
+  if(dx !== dy) return dx - dy;
+  const kx = x.kmRest === null ? Infinity : x.kmRest;
+  const ky = y.kmRest === null ? Infinity : y.kmRest;
+  if(kx !== ky) return kx - ky;
+  return String(x.vehiculo + x.item).localeCompare(String(y.vehiculo + y.item), 'es');
+}
+
+function itemsDeVehiculo_(nombre, ctx){
+  const kmAct = kmActualDe_(nombre, ctx);
+  const out = [];
+  ctx.ult.forEach(m => {
+    if(String(m['Vehiculo'] || '').trim() === nombre) out.push(evaluarVencimiento_(nombre, m, kmAct, ctx));
+  });
+  return out.sort(ordenUrgencia_);
+}
+/* PURE-END */
+
+function hoyLocal_(){
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function ctxVenc_(){
+  return {
+    movs: movimientos, vehs: vehiculos, ult: ultimosPorItem_(movimientos),
+    hoy: hoyLocal_().getTime(), avisoKm, avisoDias
+  };
+}
+
+const NOMBRE_NIVEL_ = { 0: 'Sin datos', 1: 'Al día', 2: 'Por vencer', 3: 'Vencido' };
+const CLASE_NIVEL_ = { 0: 'none', 1: 'ok', 2: 'warn', 3: 'bad' };
+function badgeHTML_(nivel){
+  return `<span class="badge ${CLASE_NIVEL_[nivel]}">${NOMBRE_NIVEL_[nivel]}</span>`;
+}
+
+const TITULOS_TAB = { vehiculos: 'Vehículos', vencimientos: 'Vencimientos', movimientos: 'Movimientos' };
+
+/* ---- Pestaña Vehículos ---- */
+function calcularResumenVehiculos(){
+  const ctx = ctxVenc_();
+  return vehiculos
+    .map(v => {
+      const nombre = String(v['Vehiculo'] || '').trim();
+      const items = itemsDeVehiculo_(nombre, ctx);
+      const venc = items.filter(e => e.nivel === 3).length;
+      const warn = items.filter(e => e.nivel === 2).length;
+      const ok = items.filter(e => e.nivel === 1).length;
+      return { nombre, km: kmActualDe_(nombre, ctx), venc, warn, ok, nivel: venc ? 3 : (warn ? 2 : (ok ? 1 : 0)) };
+    })
+    .filter(v => v.nombre);
+}
+
+function badgesVehiculoHTML_(v){
+  const b = [];
+  if(v.venc) b.push(`<span class="badge bad">${v.venc} vencido${v.venc > 1 ? 's' : ''}</span>`);
+  if(v.warn) b.push(`<span class="badge warn">${v.warn} por vencer</span>`);
+  if(!b.length) b.push(v.ok ? '<span class="badge ok">Al día</span>' : '<span class="badge none">Sin datos</span>');
+  return `<div class="badges">${b.join('')}</div>`;
+}
+
+function renderTablaVehiculos(lista, mensajeVacio){
+  ultimaListaVehiculosVisible = lista;
+
+  if(!lista.length){
+    mainEl.innerHTML = `<div class="state-msg">${mensajeVacio}</div>`;
+    return;
+  }
+
+  const filas = lista.map(v => {
+    const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
+    return `<tr class="cliente-row" data-vehiculo="${escHtml_(v.nombre)}">
+      <td class="nombre">${escHtml_(v.nombre)}</td>
+      <td class="km ${claseKm}">${formatKm(v.km)}</td>
+      <td class="estado">${badgesVehiculoHTML_(v)}</td>
+    </tr>`;
+  }).join('');
+
+  mainEl.innerHTML = `
+    <div class="stock-table-wrap">
+      <div class="clientes-scroll">
+        <table class="clientes">
+          <colgroup>
+            <col><col style="width:110px"><col style="width:132px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="nombre">Vehículo</th>
+              <th>Km actual</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const nombre = tr.dataset.vehiculo;
+      vehiculoSeleccionadoNombre = (vehiculoSeleccionadoNombre === nombre) ? null : nombre;
+      actualizarSeleccionUI();
+    });
+  });
+  actualizarSeleccionUI();
+}
+
+function renderVehiculos(filtro){
+  const lista = calcularResumenVehiculos()
+    .filter(v => !filtro || v.nombre.toLowerCase().includes(filtro.toLowerCase()))
+    .sort((a, b) => (b.nivel - a.nivel) || a.nombre.localeCompare(b.nombre, 'es'));
+
+  renderTablaVehiculos(lista, 'Sin vehículos que coincidan.');
+}
+
+/* ---- Pestaña Vencimientos ---- */
+let ultimaListaVenc = [];
+let vencSeleccionadaKey = null;
+
+function clavVenc_(e){ return e.vehiculo + '||' + e.item; }
+
+function todosLosVencimientos_(){
+  const ctx = ctxVenc_();
+  const out = [];
+  vehiculos.forEach(v => {
+    const nombre = String(v['Vehiculo'] || '').trim();
+    if(!nombre) return;
+    itemsDeVehiculo_(nombre, ctx).forEach(e => { if(e.nivel >= 1) out.push(e); });
+  });
+  return out.sort(ordenUrgencia_);
+}
+
+function renderVencimientos(filtro){
+  const f = (filtro || '').toLowerCase();
+  const lista = todosLosVencimientos_()
+    .filter(e => !f || `${e.vehiculo} ${e.item}`.toLowerCase().includes(f));
+  ultimaListaVenc = lista;
+
+  if(!lista.length){
+    mainEl.innerHTML = `<div class="state-msg">${filtro
+      ? 'Sin vencimientos que coincidan.'
+      : 'Todavía no hay vencimientos. Cargá movimientos con "Ítem" (o importá tu Excel desde el engranaje) para verlos acá.'}</div>`;
+    return;
+  }
+
+  const venc = lista.filter(e => e.nivel === 3).length;
+  const warn = lista.filter(e => e.nivel === 2).length;
+  const resumen = `<div class="venc-resumen">
+      ${venc ? `<span class="badge bad">${venc} vencido${venc > 1 ? 's' : ''}</span>` : ''}
+      ${warn ? `<span class="badge warn">${warn} por vencer</span>` : ''}
+      ${(!venc && !warn) ? '<span class="badge ok">Todo al día</span>' : ''}
+    </div>`;
+
+  const filas = lista.map(e => {
+    const vence = [e.pkm !== null ? formatKm(e.pkm) : '', e.pf ? formatFecha(e.pf) : ''].filter(Boolean).join('<br>');
+    return `<tr class="cliente-row" data-key="${escHtml_(clavVenc_(e))}">
+      <td class="nombre"><div class="v-veh">${escHtml_(e.vehiculo)}</div><div class="v-item">${escHtml_(e.item)}</div></td>
+      <td><div class="v-vence">${vence || '-'}</div></td>
+      <td class="estado"><div class="badges">${badgeHTML_(e.nivel)}</div><div class="v-det">${escHtml_(detalleVenc_(e))}</div></td>
+    </tr>`;
+  }).join('');
+
+  mainEl.innerHTML = `${resumen}
+    <div class="stock-table-wrap">
+      <div class="clientes-scroll">
+        <table class="clientes">
+          <colgroup>
+            <col><col style="width:112px"><col style="width:140px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="nombre">Vehículo / ítem</th>
+              <th>Vence</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const key = tr.dataset.key;
+      vencSeleccionadaKey = (vencSeleccionadaKey === key) ? null : key;
+      actualizarSeleccionUI();
+    });
+  });
+  actualizarSeleccionUI();
+}
+
+/* ---- Botones flotantes nuevos ---- */
+const fabFicha = document.getElementById('fab-ficha');
+const fabKm = document.getElementById('fab-km');
+const fabRegistrar = document.getElementById('fab-registrar');
+
+document.getElementById('tab-venc').addEventListener('click', () => setTab('vencimientos'));
+
+fabRegistrar.addEventListener('click', () => {
+  if(miRol === 'visitante') return;
+  const e = ultimaListaVenc.find(x => clavVenc_(x) === vencSeleccionadaKey);
+  deseleccionarFila();
+  if(!e) return;
+  const base = e.mov;
+  abrirNuevoModal({
+    'Vehiculo': e.vehiculo, 'Item': e.item,
+    'Tipo de Servicio': base['Tipo de Servicio'] || '', 'Taller': base['Taller'] || '',
+    'Concepto': base['Concepto'] || '',
+    'Kilometraje': e.kmAct,
+    'Fecha': fechaLocalInput(new Date()),
+    'Notas': ''
+  }, false, true);
+});
+
+/* ---- Ficha del vehículo ---- */
+const fichaModal = document.getElementById('ficha-modal');
+const fichaTitulo = document.getElementById('ficha-titulo');
+const fichaBody = document.getElementById('ficha-body');
+
+function fichaItemHTML_(e){
+  const m = e.mov;
+  return `<div class="ficha-item n${e.nivel}">
+    <div class="fi-top"><b>${escHtml_(e.item)}</b>${badgeHTML_(e.nivel)}</div>
+    <div class="fi-det">Último: <strong>${formatFecha(m['Fecha'])}</strong> · ${formatKm(m['Kilometraje'])}</div>
+    <div class="fi-det">Próximo: <strong>${e.pkm !== null ? formatKm(e.pkm) : '-'}</strong> · <strong>${e.pf ? formatFecha(e.pf) : '-'}</strong></div>
+    <div class="fi-det est">${escHtml_(detalleVenc_(e))}</div>
+  </div>`;
+}
+
+function abrirFicha_(nombre){
+  const ctx = ctxVenc_();
+  const items = itemsDeVehiculo_(nombre, ctx);
+  const kmAct = kmActualDe_(nombre, ctx);
+  fichaTitulo.textContent = nombre;
+  fichaBody.innerHTML =
+    `<div class="ficha-km">Kilometraje actual: <strong>${formatKm(kmAct)}</strong></div>` +
+    (items.length
+      ? items.map(fichaItemHTML_).join('')
+      : '<div class="state-msg">Todavía no hay movimientos con "Ítem" para este vehículo.</div>');
+  fichaModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#ficha-modal .nuevo-box'));
+  fichaBody.scrollTop = 0;
+}
+
+function cerrarFicha_(){ fichaModal.classList.add('hidden'); }
+document.getElementById('ficha-cerrar').addEventListener('click', cerrarFicha_);
+document.getElementById('ficha-cerrar-btn').addEventListener('click', cerrarFicha_);
+
+fabFicha.addEventListener('click', () => {
+  const nombre = vehiculoSeleccionadoNombre;
+  deseleccionarFila();
+  if(nombre) abrirFicha_(nombre);
+});
+
+/* ---- Km actual del vehículo ---- */
+const kmModal = document.getElementById('km-modal');
+const kmVehiculoLabel = document.getElementById('km-vehiculo');
+const kmInput = document.getElementById('km-input');
+const kmHint = document.getElementById('km-hint');
+const kmError = document.getElementById('km-error');
+const kmGuardar = document.getElementById('km-guardar');
+let kmVehiculoNombre = null;
+
+kmInput.addEventListener('input', () => { kmInput.value = formatearKm(kmInput.value); });
+
+function abrirKmModal_(nombre){
+  kmVehiculoNombre = nombre;
+  const act = kmActualDe_(nombre, ctxVenc_());
+  kmVehiculoLabel.textContent = nombre;
+  kmInput.value = (act !== null && act !== undefined) ? numeroKmAInputStr(act) : '';
+  kmHint.textContent = 'Actualizalo cada vez que quieras controlar los vencimientos. Al cargar un movimiento con más km, se actualiza solo.';
+  kmError.textContent = '';
+  kmGuardar.disabled = false;
+  kmGuardar.textContent = 'Guardar';
+  kmModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#km-modal .nuevo-box'));
+  setTimeout(() => kmInput.focus(), 50);
+}
+
+function cerrarKmModal_(){ kmModal.classList.add('hidden'); }
+document.getElementById('km-cerrar').addEventListener('click', cerrarKmModal_);
+document.getElementById('km-cancelar-btn').addEventListener('click', cerrarKmModal_);
+
+fabKm.addEventListener('click', () => {
+  if(miRol === 'visitante') return;
+  const nombre = vehiculoSeleccionadoNombre;
+  deseleccionarFila();
+  if(nombre) abrirKmModal_(nombre);
+});
+
+kmGuardar.addEventListener('click', async () => {
+  kmError.textContent = '';
+  const n = parseInt(limpiarKmParaEnvio(kmInput.value), 10);
+  if(!n || n < 0){ kmError.textContent = 'Ingresá el kilometraje.'; return; }
+  const veh = vehiculos.find(v => String(v['Vehiculo'] || '').trim() === kmVehiculoNombre);
+  if(!veh){ kmError.textContent = 'No se encontró el vehículo.'; return; }
+  const act = kmActualDe_(kmVehiculoNombre, ctxVenc_());
+  if(act !== null && n < act && !confirm(`El km ingresado (${nfmt_(n)}) es menor al actual (${nfmt_(act)}). ¿Guardar igual?`)) return;
+
+  kmGuardar.disabled = true;
+  kmGuardar.textContent = 'Guardando...';
+  try{
+    await db.collection('vehiculos').doc(veh._id).update({
+      'Km Actual': n, 'Km Fecha': fechaLocalInput(new Date())
+    });
+    cerrarKmModal_();
+    await cargarDatos();
+  }catch(err){
+    kmError.textContent = (err && err.code === 'permission-denied')
+      ? 'Firebase rechazó el guardado: falta publicar las reglas nuevas (firestore.rules).'
+      : 'No se pudo guardar: ' + err.message;
+  }finally{
+    kmGuardar.disabled = false;
+    kmGuardar.textContent = 'Guardar';
+  }
+});
+
+// Al cargar un movimiento nuevo con más km que el actual, se sube el km del vehículo.
+async function subirKmVehiculo_(nombreVehiculo, km){
+  try{
+    if(!km) return;
+    const veh = vehiculos.find(v => String(v['Vehiculo'] || '').trim().toLowerCase() === String(nombreVehiculo).trim().toLowerCase());
+    if(!veh) return;
+    const act = kmActualDe_(String(veh['Vehiculo']).trim(), ctxVenc_());
+    if(act !== null && km <= act) return;
+    await db.collection('vehiculos').doc(veh._id).update({
+      'Km Actual': km, 'Km Fecha': fechaLocalInput(new Date())
+    });
+  }catch(err){
+    console.warn('No se pudo actualizar el km del vehículo:', err);
+  }
+}
+
+/* ---- Importar desde Excel ---- */
+const importModal = document.getElementById('import-modal');
+const importTexto = document.getElementById('import-text');
+const importError = document.getElementById('import-error');
+const importGuardar = document.getElementById('import-guardar');
+
+function abrirImportModal_(){
+  if(miRol !== 'admin') return;
+  importTexto.value = '';
+  importError.textContent = '';
+  importGuardar.disabled = false;
+  importGuardar.textContent = 'Importar';
+  importModal.classList.remove('hidden');
+  posicionarNuevoBox(document.querySelector('#import-modal .nuevo-box'));
+}
+function cerrarImportModal_(){ importModal.classList.add('hidden'); }
+document.getElementById('import-cerrar').addEventListener('click', cerrarImportModal_);
+document.getElementById('import-cancelar-btn').addEventListener('click', cerrarImportModal_);
+document.getElementById('cfg-importar').addEventListener('click', () => {
+  cerrarConfigModal();
+  abrirImportModal_();
+});
+
+importGuardar.addEventListener('click', async () => {
+  importError.textContent = '';
+  if(miRol !== 'admin'){ importError.textContent = 'Solo un administrador puede importar.'; return; }
+  if(!importTexto.value.trim()){ importError.textContent = 'Pegá primero las filas copiadas de Excel.'; return; }
+
+  const filas = parsearTabla_(importTexto.value);
+  const vehMap = new Map(vehiculos.map(v => [normTxt_(v['Vehiculo']), String(v['Vehiculo'] || '').trim()]));
+  const existentes = new Set(movimientos.map(m =>
+    `${String(m['Fecha'] || '').slice(0, 10)}|${normTxt_(m['Vehiculo'])}|${normTxt_(m['Concepto'])}`));
+  const res = procesarImport_(filas, { items: itemsConfig, vehMap, existentes });
+
+  if(res.error){ importError.textContent = res.error; return; }
+  if(!res.nuevos.length){
+    importError.textContent = `No hay movimientos nuevos para importar (repetidos: ${res.duplicados}, vacíos: ${res.vacias}, con problemas: ${res.invalidas.length}).`;
+    return;
+  }
+
+  const conItem = res.nuevos.filter(r => r.item).length;
+  let msg = `Se van a importar ${res.nuevos.length} movimientos (${conItem} con ítem asignado).\n`;
+  if(res.vehiculosNuevos.length) msg += `Vehículos nuevos que se crean: ${res.vehiculosNuevos.join(', ')}.\n`;
+  if(res.duplicados) msg += `Repetidos que se omiten: ${res.duplicados}.\n`;
+  if(res.vacias) msg += `Filas sin concepto ni tipo que se omiten: ${res.vacias}.\n`;
+  if(res.invalidas.length) msg += `Filas con problemas que se omiten: ${res.invalidas.map(x => 'fila ' + x.n + ' (' + x.motivo + ')').join(', ')}.\n`;
+  msg += '\n¿Confirmás la importación?';
+  if(!confirm(msg)) return;
+
+  importGuardar.disabled = true;
+  importGuardar.textContent = 'Importando...';
+  try{
+    // Km más alto por vehículo, para dejar cargado el km actual.
+    const maxKm = new Map();
+    res.nuevos.forEach(r => {
+      if(r.kilometraje === null) return;
+      const prev = maxKm.get(r.vehiculo);
+      if(!prev || r.kilometraje > prev.km) maxKm.set(r.vehiculo, { km: r.kilometraje, fecha: r.fecha });
+    });
+
+    const ops = [];
+    res.vehiculosNuevos.forEach(nombre => {
+      const datos = { 'Vehiculo': nombre };
+      const k = maxKm.get(nombre);
+      if(k){ datos['Km Actual'] = k.km; datos['Km Fecha'] = k.fecha; }
+      ops.push(b => b.set(db.collection('vehiculos').doc(slugVehiculo_(nombre)), datos));
+    });
+    maxKm.forEach((k, nombre) => {
+      if(res.vehiculosNuevos.includes(nombre)) return;
+      const v = vehiculos.find(x => String(x['Vehiculo'] || '').trim() === nombre);
+      if(!v) return;
+      const actual = (v['Km Actual'] === null || v['Km Actual'] === undefined || v['Km Actual'] === '') ? 0 : Number(v['Km Actual']);
+      if(k.km > actual){
+        ops.push(b => b.update(db.collection('vehiculos').doc(v._id), { 'Km Actual': k.km, 'Km Fecha': k.fecha }));
+      }
+    });
+    const base = Date.now();
+    res.nuevos.forEach((r, i) => {
+      ops.push(b => {
+        const ref = db.collection('mantenimientos').doc();
+        b.set(ref, {
+          'ID': ref.id, 'Fecha': r.fecha, 'Vehiculo': r.vehiculo, 'Tipo de Servicio': r.tipoServicio,
+          'Taller': r.taller, 'Concepto': r.concepto, 'Kilometraje': r.kilometraje,
+          'Item': r.item, 'Proximo Km': r.proximoKm, 'Proxima Fecha': r.proximaFecha,
+          'Usuario': miEmail, 'Notas': r.notas,
+          'Fecha Real': firebase.firestore.FieldValue.serverTimestamp(),
+          'Orden': firebase.firestore.Timestamp.fromMillis(base + i)
+        });
+      });
+    });
+
+    for(let i = 0; i < ops.length; i += 400){
+      const b = db.batch();
+      ops.slice(i, i + 400).forEach(fn => fn(b));
+      await b.commit();
+    }
+    cerrarImportModal_();
+    await cargarDatos();
+    alert(`Listo: se importaron ${res.nuevos.length} movimientos.`);
+  }catch(err){
+    importError.textContent = (err && err.code === 'permission-denied')
+      ? 'Firebase rechazó el guardado: falta publicar las reglas nuevas (firestore.rules).'
+      : 'No se pudo importar: ' + err.message;
+  }finally{
+    importGuardar.disabled = false;
+    importGuardar.textContent = 'Importar';
+  }
+});
+
+/* ================================================================ */
 
 iniciarLogin();
 
