@@ -1028,8 +1028,8 @@ async function guardarMovimientoFirestore_(payload){
   if(payload.id){
     if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para editar un movimiento. Solo un administrador puede hacerlo.');
     const ref = db.collection('mantenimientos').doc(String(payload.id));
-    const snap = await ref.get();
-    if(!snap.exists) throw new Error('No se encontró el movimiento a editar');
+    const mov = movimientos.find(m => String(m['ID']) === String(payload.id));
+    if(!mov) throw new Error('No se encontró el movimiento a editar');
 
     await ref.update({
       'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
@@ -1039,6 +1039,14 @@ async function guardarMovimientoFirestore_(payload){
       // 'Usuario' NO se toca: se conserva el de quien cargó el
       // movimiento originalmente, no el de quien lo está editando ahora.
     });
+    // Se actualiza la copia local: no hace falta volver a leer Firestore.
+    Object.assign(mov, {
+      'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
+      'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Item': item, 'Proximo Km': proximoKm, 'Proxima Fecha': proximaFecha,
+      'Notas': notas
+    });
+    refrescarVistaLocal_(false);
   }else{
     const ref = db.collection('mantenimientos').doc();
     await ref.set({
@@ -1051,19 +1059,33 @@ async function guardarMovimientoFirestore_(payload){
       // posición fija del movimiento en la lista.
       'Orden': firebase.firestore.FieldValue.serverTimestamp()
     });
+    // Importante: subir el km ANTES de agregar el movimiento a la lista local,
+    // porque compara contra el km que ya había.
     await subirKmVehiculo_(vehiculo, kilometraje);
+    const ahora = firebase.firestore.Timestamp.now();
+    movimientos.push({
+      'ID': ref.id, 'Fecha': fecha, 'Vehiculo': vehiculo, 'Tipo de Servicio': tipoServicio,
+      'Taller': taller, 'Concepto': concepto, 'Kilometraje': kilometraje,
+      'Item': item, 'Proximo Km': proximoKm, 'Proxima Fecha': proximaFecha,
+      'Usuario': miEmail, 'Notas': notas, 'Fecha Real': ahora, 'Orden': ahora
+    });
+    refrescarVistaLocal_(true);
   }
+}
 
-  await cargarDatos();
+// Redibuja con los datos que ya están en memoria (cero lecturas a Firestore).
+function refrescarVistaLocal_(irAlFondo){
+  actualizarListaVehiculos();
+  if(currentTab === 'movimientos' && irAlFondo) irAlFondoMovimientos = true;
+  render();
 }
 
 async function eliminarMovimientoFirestore_(id){
   if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para eliminar un movimiento. Solo un administrador puede hacerlo.');
   const ref = db.collection('mantenimientos').doc(String(id));
-  const snap = await ref.get();
-  if(!snap.exists) throw new Error('No se encontró el movimiento a eliminar');
   await ref.delete();
-  await cargarDatos();
+  movimientos = movimientos.filter(m => String(m['ID']) !== String(id));
+  refrescarVistaLocal_(false);
 }
 /* =============================================================== */
 
@@ -1082,15 +1104,15 @@ async function guardarVehiculoFirestore_(nombreNuevoIn, nombreOriginalIn){
   if(nombreOriginal){
     const slugOriginal = slugVehiculo_(nombreOriginal);
     const refOriginal = db.collection('vehiculos').doc(slugOriginal);
-    const snapOriginal = await refOriginal.get();
-    if(!snapOriginal.exists) throw new Error('No se encontró el vehículo a editar');
+    const vehOriginal = vehiculos.find(v => v._id === slugOriginal);
+    if(!vehOriginal) throw new Error('No se encontró el vehículo a editar');
 
     if(slugOriginal === slugNuevo){
       await refOriginal.update({ 'Vehiculo': nombreNuevo });
+      vehOriginal['Vehiculo'] = nombreNuevo;
     }else{
-      const yaExiste = await refNuevo.get();
-      if(yaExiste.exists) throw new Error('Ya existe otro vehículo con ese nombre');
-      const datosOriginal = snapOriginal.data() || {};
+      if(vehiculos.some(v => v._id === slugNuevo)) throw new Error('Ya existe otro vehículo con ese nombre');
+      const datosOriginal = vehOriginal;
       const nuevosDatos = { 'Vehiculo': nombreNuevo };
       if(datosOriginal['Km Actual'] !== undefined) nuevosDatos['Km Actual'] = datosOriginal['Km Actual'];
       if(datosOriginal['Km Fecha'] !== undefined) nuevosDatos['Km Fecha'] = datosOriginal['Km Fecha'];
@@ -1099,20 +1121,24 @@ async function guardarVehiculoFirestore_(nombreNuevoIn, nombreOriginalIn){
 
       // Renombrado en cascada: todos los movimientos de este vehículo
       // pasan a apuntar al nombre nuevo, para no perder el vínculo.
-      const snapMov = await db.collection('mantenimientos').where('Vehiculo', '==', nombreOriginal).get();
-      if(!snapMov.empty){
+      const afectados = movimientos.filter(m => m['Vehiculo'] === nombreOriginal);
+      for(let i = 0; i < afectados.length; i += 400){
         const batch = db.batch();
-        snapMov.forEach(d => batch.update(d.ref, { 'Vehiculo': nombreNuevo }));
+        afectados.slice(i, i + 400).forEach(m =>
+          batch.update(db.collection('mantenimientos').doc(String(m['ID'])), { 'Vehiculo': nombreNuevo }));
         await batch.commit();
       }
+      afectados.forEach(m => { m['Vehiculo'] = nombreNuevo; });
+      vehiculos = vehiculos.filter(v => v._id !== slugOriginal);
+      vehiculos.push(Object.assign({}, nuevosDatos, { _id: slugNuevo }));
     }
   }else{
-    const yaExiste = await refNuevo.get();
-    if(yaExiste.exists) throw new Error('Ya existe un vehículo con ese nombre');
+    if(vehiculos.some(v => v._id === slugNuevo)) throw new Error('Ya existe un vehículo con ese nombre');
     await refNuevo.set({ 'Vehiculo': nombreNuevo });
+    vehiculos.push({ 'Vehiculo': nombreNuevo, _id: slugNuevo });
   }
 
-  await cargarDatos();
+  refrescarVistaLocal_(false);
 }
 
 async function eliminarVehiculoFirestore_(nombreIn){
@@ -1120,12 +1146,13 @@ async function eliminarVehiculoFirestore_(nombreIn){
   if(!nombre) throw new Error('Falta el vehículo a eliminar');
   if(miRol !== 'admin') throw new Error('Tu usuario no tiene permiso para eliminar un vehículo. Solo un administrador puede hacerlo.');
 
-  const snapMov = await db.collection('mantenimientos').where('Vehiculo', '==', nombre).limit(1).get();
-  if(!snapMov.empty){
+  if(movimientos.some(m => m['Vehiculo'] === nombre)){
     throw new Error('No se puede eliminar: el vehículo tiene movimientos cargados. Eliminá primero sus movimientos.');
   }
-  await db.collection('vehiculos').doc(slugVehiculo_(nombre)).delete();
-  await cargarDatos();
+  const slug = slugVehiculo_(nombre);
+  await db.collection('vehiculos').doc(slug).delete();
+  vehiculos = vehiculos.filter(v => v._id !== slug);
+  refrescarVistaLocal_(false);
 }
 /* =============================================================== */
 
@@ -1772,10 +1799,8 @@ function liberarLockActivo(){
   if(!lockIdActivo) return;
   const id = lockIdActivo;
   lockIdActivo = null;
-  const ref = db.collection('locks_mantenimiento').doc(id);
-  ref.get().then(snap => {
-    if(snap.exists && snap.data().email === miEmail) return ref.delete();
-  }).catch(() => {});
+  // Borrado directo (sin leer antes): ahorra una lectura por cada edición.
+  db.collection('locks_mantenimiento').doc(id).delete().catch(() => {});
 }
 
 function posicionarNuevoBox(box){
@@ -2677,8 +2702,10 @@ kmGuardar.addEventListener('click', async () => {
     await db.collection('vehiculos').doc(veh._id).update({
       'Km Actual': n, 'Km Fecha': fechaLocalInput(new Date())
     });
+    veh['Km Actual'] = n;
+    veh['Km Fecha'] = fechaLocalInput(new Date());
     cerrarKmModal_();
-    await cargarDatos();
+    refrescarVistaLocal_(false);
   }catch(err){
     kmError.textContent = (err && err.code === 'permission-denied')
       ? 'Firebase rechazó el guardado: falta publicar las reglas nuevas (firestore.rules).'
@@ -2697,9 +2724,12 @@ async function subirKmVehiculo_(nombreVehiculo, km){
     if(!veh) return;
     const act = kmActualDe_(String(veh['Vehiculo']).trim(), ctxVenc_());
     if(act !== null && km <= act) return;
+    const fechaKm = fechaLocalInput(new Date());
     await db.collection('vehiculos').doc(veh._id).update({
-      'Km Actual': km, 'Km Fecha': fechaLocalInput(new Date())
+      'Km Actual': km, 'Km Fecha': fechaKm
     });
+    veh['Km Actual'] = km;
+    veh['Km Fecha'] = fechaKm;
   }catch(err){
     console.warn('No se pudo actualizar el km del vehículo:', err);
   }
