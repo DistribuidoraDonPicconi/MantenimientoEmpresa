@@ -479,6 +479,50 @@
   table.clientes tr.item-vacio td{
     text-align:left; padding-left:34px; font-size:13px; color:var(--texto-tenue); border-right:none;
   }
+
+  .header-btns{ display:flex; gap:22px; }
+  header .top-row > div:first-child{ min-width:0; }
+
+  /* ===== Celular ===== */
+  @media (max-width:600px){
+    header{ padding:14px 14px 2px; }
+    header h1{ font-size:23px; }
+    header .sub{ font-size:12.5px; }
+    .header-btns{ gap:6px; flex-shrink:0; }
+    .icon-btn{ padding:8px; border-radius:10px; }
+    .icon-btn svg{ width:18px; height:18px; }
+
+    .pill-tabs{ margin:10px 14px 0; }
+    .search-wrap{ padding:10px 14px 4px; }
+    main{ padding:8px 14px 96px; }              /* aire abajo para que el + no tape la tabla */
+    main.grid-mode{ padding-bottom:84px; }      /* la tabla termina arriba del + */
+
+    /* Tabla de Vehículos: sin ancho mínimo, entra en la pantalla */
+    table.clientes{ min-width:0; }
+    table.clientes col:nth-child(2){ width:78px !important; }
+    table.clientes col:nth-child(3){ width:104px !important; }
+    table.clientes td{ padding:9px 6px; }
+    table.clientes th{ padding:8px 6px; font-size:11px; }
+    table.clientes td.km{ width:auto; font-size:12.5px; }
+    table.clientes td.nombre{ font-size:14px; }
+    table.clientes tr.veh-row td.nombre{ padding-left:6px; }
+    table.clientes tr.item-row td.nombre{ padding-left:20px; font-size:13.5px; }
+    table.clientes tr.item-vacio td{ padding-left:20px; }
+    table.clientes td.estado{ padding:8px 4px; }
+    .badge{ font-size:11px; padding:3px 7px; }
+    .v-vence{ font-size:12px; }
+    .v-det{ font-size:10.5px; }
+    .venc-resumen{ gap:6px; }
+
+    /* Botones flotantes más chicos y más abajo */
+    .fab{ width:52px; height:52px; bottom:18px; }
+    .fab svg{ width:24px; height:24px; }
+    .fab-acciones{ bottom:80px; gap:10px; }
+    .fab-accion{ width:48px; height:48px; }
+    .fab-accion svg{ width:21px; height:21px; }
+
+    .nuevo-box{ margin-left:8px; margin-right:8px; width:auto; }
+  }
 </style>
 </head>
 <body>
@@ -756,7 +800,7 @@
         <h1 id="header-title">Vehículos</h1>
         <div class="sub">Distribuidora Don Picconi</div>
       </div>
-      <div style="display:flex; gap:22px;">
+      <div class="header-btns">
         <button class="icon-btn hidden" id="btn-config" aria-label="Configuración">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
@@ -1341,7 +1385,8 @@ function render(){
 
 function posicionarFabs(){
   const wrap = document.querySelector('.mov-table-wrap, .stock-table-wrap');
-  const right = wrap ? Math.max(16, window.innerWidth - wrap.getBoundingClientRect().right + 22) : 22;
+  const esCel = window.innerWidth <= 600;
+  const right = esCel ? 16 : (wrap ? Math.max(16, window.innerWidth - wrap.getBoundingClientRect().right + 22) : 22);
   fabNuevo.style.right = right + 'px';
   fabAcciones.style.right = right + 'px';
 }
