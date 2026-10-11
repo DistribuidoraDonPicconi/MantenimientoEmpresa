@@ -384,6 +384,7 @@
   .cfg-head{ font-size:11.5px; font-weight:800; color:var(--texto-tenue); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; padding:0 2px; }
   .cfg-head span:nth-child(2), .cfg-head span:nth-child(3){ text-align:center; }
   .cfg-row{ margin-bottom:8px; }
+  .cfg-row.cfg-row-tipo{ grid-template-columns:1fr 34px; }
   .cfg-row input{
     width:100%; padding:10px 9px; border-radius:10px; border:1px solid var(--azul-borde);
     background:#fff; font-size:15px; outline:none; color:#1a1f2b; min-width:0;
@@ -586,12 +587,12 @@
 
       <div class="nm-servicio-grid">
         <div>
-          <label for="nm-tipo">Tipo de servicio</label>
-          <input type="text" id="nm-tipo" placeholder="Ej: Cambio de aceite" list="lista-tipos-servicio" autocomplete="off">
-        </div>
-        <div>
           <label for="nm-taller">Taller</label>
           <input type="text" id="nm-taller" placeholder="Ej: Taller Gómez" list="lista-talleres" autocomplete="off">
+        </div>
+        <div>
+          <label for="nm-tipo">Tipo de servicio</label>
+          <input type="text" id="nm-tipo" placeholder="Ej: Cambio de aceite" list="lista-tipos-servicio" autocomplete="off">
         </div>
       </div>
       <datalist id="lista-tipos-servicio"></datalist>
@@ -608,7 +609,7 @@
         </div>
       </div>
 
-      <label for="nm-item">Ítem (para calcular el próximo vencimiento)</label>
+      <label for="nm-item">Categoría (para calcular el próximo vencimiento)</label>
       <input type="text" id="nm-item" placeholder="Ej: Service" list="lista-items" autocomplete="off">
       <datalist id="lista-items"></datalist>
 
@@ -680,7 +681,7 @@
     </div>
     <div class="nuevo-body">
       <p class="cfg-intro">En Excel, seleccioná las filas <b>con la fila de títulos</b>, copiá (Ctrl+C) y pegalas abajo. Se reconocen las columnas Fecha, Vehículo, Tipo de Servicio, Taller, Concepto, Comentarios, Kilometraje Actual, Próximo kilometraje y Próximo por Fecha.</p>
-      <p class="cfg-intro">Si no hay columna "Ítem", se deduce del concepto con los ítems de la configuración (conviene guardarla antes). Los vehículos que no existan se crean y los movimientos repetidos se omiten.</p>
+      <p class="cfg-intro">Si no hay columna "Categoría", se deduce del concepto con las categorías de la configuración (conviene guardarla antes). Los vehículos que no existan se crean y los movimientos repetidos se omiten.</p>
       <textarea id="import-text" rows="8" placeholder="Pegá acá las filas copiadas de Excel..."></textarea>
     </div>
     <div class="nuevo-error" id="import-error"></div>
@@ -698,13 +699,18 @@
       <button class="nuevo-close" id="cfg-cerrar" aria-label="Cerrar">×</button>
     </div>
     <div class="nuevo-body">
-      <p class="cfg-intro">Definí cada cuánto se repite cada ítem. Al cargar un movimiento con ese ítem, la app calcula sola el próximo km y la próxima fecha. Dejá en blanco el que no aplique (por ejemplo, una batería solo por meses).</p>
-      <div class="cfg-head"><span>Ítem</span><span>Cada (km)</span><span>Meses</span><span></span></div>
+      <p class="cfg-intro">Definí cada cuánto se repite cada categoría. Al cargar un movimiento con esa categoría, la app calcula sola el próximo km y la próxima fecha. Dejá en blanco el que no aplique (por ejemplo, una batería solo por meses).</p>
+      <div class="cfg-head"><span>Categoría</span><span>Cada (km)</span><span>Meses</span><span></span></div>
       <div id="cfg-lista"></div>
-      <button class="cfg-add" id="cfg-agregar">+ Agregar ítem</button>
+      <button class="cfg-add" id="cfg-agregar">+ Agregar categoría</button>
+
+      <div class="cfg-sec">Tipos de servicio</div>
+      <p class="cfg-intro">Son las opciones que se sugieren en el campo "Tipo de servicio" al cargar un movimiento. Igual se puede escribir cualquier otro texto.</p>
+      <div id="cfg-tipos-lista"></div>
+      <button class="cfg-add" id="cfg-agregar-tipo">+ Agregar tipo de servicio</button>
 
       <div class="cfg-sec">Avisos</div>
-      <p class="cfg-intro">Un ítem pasa a "Por vencer" (amarillo) cuando falta menos que esto. Al pasarse del km o de la fecha, queda "Vencido" (rojo).</p>
+      <p class="cfg-intro">Una categoría pasa a "Por vencer" (amarillo) cuando falta menos que esto. Al pasarse del km o de la fecha, queda "Vencido" (rojo).</p>
       <div class="cfg-aviso-grid">
         <div><label for="cfg-aviso-km">Avisar con (km)</label><input type="text" inputmode="numeric" id="cfg-aviso-km" placeholder="1.000"></div>
         <div><label for="cfg-aviso-dias">Avisar con (días)</label><input type="text" inputmode="numeric" id="cfg-aviso-dias" placeholder="30"></div>
@@ -818,8 +824,8 @@ const CONFIG = {
 
   CAMPO_FECHA: 'Fecha',
 
-  // Sugerencias para el campo "Tipo de servicio" (no restringe: se
-  // puede escribir cualquier otro texto).
+  // Tipos de servicio iniciales: solo se usan hasta que el admin los
+  // configure desde Ajustes (se guardan en configuracion/intervalos).
   TIPOS_SERVICIO: [
     'Cambio de aceite', 'Filtros', 'Frenos', 'Cubiertas', 'Batería',
     'Alineación y balanceo', 'Correa de distribución', 'Refrigerante',
@@ -834,8 +840,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutos
 
-document.getElementById('lista-tipos-servicio').innerHTML =
-  CONFIG.TIPOS_SERVICIO.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
 /* ======================================== */
 
 /* ============== LOGIN CON GOOGLE (vía Firebase Auth) ============== */
@@ -1084,6 +1088,7 @@ async function eliminarVehiculoFirestore_(nombreIn){
 let movimientos = [];
 let vehiculos = [];
 let itemsConfig = []; // [{ nombre, km, meses }] guardado en configuracion/intervalos
+let tiposServicio = CONFIG.TIPOS_SERVICIO.slice(); // sugerencias de "Tipo de servicio"
 let avisoKm = 1000;   // "por vencer" cuando faltan menos de estos km
 let avisoDias = 30;   // ... o menos de estos días
 let currentTab = 'vehiculos';
@@ -1159,8 +1164,16 @@ async function cargarDatos(){
       avisoKm = (cfg.avisoKm === undefined || cfg.avisoKm === null || isNaN(Number(cfg.avisoKm))) ? 1000 : Number(cfg.avisoKm);
       avisoDias = (cfg.avisoDias === undefined || cfg.avisoDias === null || isNaN(Number(cfg.avisoDias))) ? 30 : Number(cfg.avisoDias);
     }
+    {
+      // Si el admin nunca los configuró, quedan los tipos iniciales.
+      const guardados = (cfgSnap && cfgSnap.exists) ? cfgSnap.data().tiposServicio : undefined;
+      tiposServicio = Array.isArray(guardados)
+        ? guardados.map(t => String(t || '').trim()).filter(Boolean)
+        : CONFIG.TIPOS_SERVICIO.slice();
+    }
     actualizarListaVehiculos();
     actualizarListaItems();
+    actualizarListaTipos();
     if(currentTab === 'movimientos') irAlFondoMovimientos = true;
     render();
   }catch(err){
@@ -1207,8 +1220,8 @@ function renderMovimientos(filtro){
       return `<tr class="mov-row" data-id="${mov['ID'] || ''}">
         <td class="fecha">${formatFecha(mov[CONFIG.CAMPO_FECHA])}</td>
         <td class="cliente">${mov['Vehiculo'] || '-'}</td>
-        <td>${mov['Tipo de Servicio'] || '-'}</td>
         <td>${mov['Taller'] || '-'}</td>
+        <td>${mov['Tipo de Servicio'] || '-'}</td>
         <td>${mov['Item'] || '-'}</td>
         <td class="concepto">${mov['Concepto'] || '-'}</td>
         <td class="km ${claseKm}">${formatKm(km)}</td>
@@ -1231,7 +1244,7 @@ function renderMovimientos(filtro){
         <table class="mov">
           <thead>
             <tr>
-              <th>Fecha</th><th>Vehículo</th><th>Tipo de Servicio</th><th>Taller</th><th>Ítem</th>
+              <th>Fecha</th><th>Vehículo</th><th>Taller</th><th>Tipo de Servicio</th><th>Categoría</th>
               <th>Concepto</th><th>Km</th><th>Próx. km</th><th>Próx. fecha</th><th>Notas</th><th>Último</th><th>Usuario</th>
             </tr>
           </thead>
@@ -1267,6 +1280,12 @@ function actualizarListaItems(){
   document.getElementById('lista-items').innerHTML =
     nombres.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
 }
+
+function actualizarListaTipos(){
+  document.getElementById('lista-tipos-servicio').innerHTML =
+    tiposServicio.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
+}
+actualizarListaTipos();
 
 /* ============== Scroll / tabs ============== */
 const scrollState = { vehiculos: 0, movimientos: { top: 0, left: 0 } };
@@ -1310,7 +1329,7 @@ function render(){
   btnCompartir.classList.remove('hidden');
   headerTitle.textContent = TITULOS_TAB[currentTab];
   if(currentTab === 'vehiculos'){
-    searchEl.placeholder = 'Buscar vehículo o ítem...';
+    searchEl.placeholder = 'Buscar vehículo o categoría...';
     renderVehiculos(filtro);
   }else{
     searchEl.placeholder = 'Buscar movimiento...';
@@ -1917,6 +1936,7 @@ btnGuardar.addEventListener('click', async () => {
 /* ============== Configuración: intervalos por ítem ============== */
 const configModal = document.getElementById('config-modal');
 const cfgLista = document.getElementById('cfg-lista');
+const cfgTiposLista = document.getElementById('cfg-tipos-lista');
 const cfgError = document.getElementById('cfg-error');
 const cfgGuardar = document.getElementById('cfg-guardar');
 const cfgAvisoKm = document.getElementById('cfg-aviso-km');
@@ -1958,11 +1978,30 @@ function agregarFilaConfig(it){
 
   const btnDel = document.createElement('button');
   btnDel.type = 'button'; btnDel.className = 'cfg-del'; btnDel.textContent = '×';
-  btnDel.setAttribute('aria-label', 'Quitar ítem');
+  btnDel.setAttribute('aria-label', 'Quitar categoría');
   btnDel.addEventListener('click', () => fila.remove());
 
   fila.append(inNombre, inKm, inMeses, btnDel);
   cfgLista.appendChild(fila);
+  return fila;
+}
+
+function agregarFilaTipo(nombre){
+  const fila = document.createElement('div');
+  fila.className = 'cfg-row cfg-row-tipo';
+
+  const inNombre = document.createElement('input');
+  inNombre.type = 'text'; inNombre.className = 'cfg-tipo-nombre';
+  inNombre.placeholder = 'Ej: Cambio de aceite'; inNombre.autocomplete = 'off';
+  inNombre.value = nombre || '';
+
+  const btnDel = document.createElement('button');
+  btnDel.type = 'button'; btnDel.className = 'cfg-del'; btnDel.textContent = '×';
+  btnDel.setAttribute('aria-label', 'Quitar tipo de servicio');
+  btnDel.addEventListener('click', () => fila.remove());
+
+  fila.append(inNombre, btnDel);
+  cfgTiposLista.appendChild(fila);
   return fila;
 }
 
@@ -1971,6 +2010,8 @@ function abrirConfigModal(){
   cfgLista.innerHTML = '';
   const base = itemsConfig.length ? itemsConfig : ITEMS_SUGERIDOS;
   base.forEach(agregarFilaConfig);
+  cfgTiposLista.innerHTML = '';
+  tiposServicio.forEach(agregarFilaTipo);
   cfgAvisoKm.value = nfmt_(avisoKm);
   cfgAvisoDias.value = String(avisoDias);
   cfgError.textContent = '';
@@ -1994,6 +2035,11 @@ document.getElementById('cfg-agregar').addEventListener('click', () => {
   document.querySelector('#config-modal .nuevo-body').scrollTop = 99999;
 });
 
+document.getElementById('cfg-agregar-tipo').addEventListener('click', () => {
+  const fila = agregarFilaTipo('');
+  fila.querySelector('.cfg-tipo-nombre').focus();
+});
+
 cfgGuardar.addEventListener('click', async () => {
   cfgError.textContent = '';
   if(miRol !== 'admin'){
@@ -2008,12 +2054,21 @@ cfgGuardar.addEventListener('click', async () => {
     const km = parseInt(limpiarKmParaEnvio(fila.querySelector('.cfg-km').value), 10) || 0;
     const meses = parseInt(fila.querySelector('.cfg-meses').value, 10) || 0;
     if(!nombre && !km && !meses) continue; // fila vacía
-    if(!nombre){ cfgError.textContent = 'Hay una fila con km o meses pero sin nombre de ítem.'; return; }
-    if(vistos.has(nombre.toLowerCase())){ cfgError.textContent = `El ítem "${nombre}" está repetido.`; return; }
+    if(!nombre){ cfgError.textContent = 'Hay una fila con km o meses pero sin nombre de categoría.'; return; }
+    if(vistos.has(nombre.toLowerCase())){ cfgError.textContent = `La categoría "${nombre}" está repetida.`; return; }
     if(!km && !meses){ cfgError.textContent = `"${nombre}" necesita km, meses o ambos.`; return; }
     vistos.add(nombre.toLowerCase());
     items.push({ nombre, km, meses });
   }
+
+  const tipos = [];
+  const tiposVistos = new Set();
+  cfgTiposLista.querySelectorAll('.cfg-tipo-nombre').forEach(inp => {
+    const t = inp.value.trim();
+    if(!t || tiposVistos.has(t.toLowerCase())) return; // vacíos y repetidos se ignoran
+    tiposVistos.add(t.toLowerCase());
+    tipos.push(t);
+  });
 
   const nuevoAvisoKm = parseInt(limpiarKmParaEnvio(cfgAvisoKm.value), 10);
   const nuevoAvisoDias = parseInt(cfgAvisoDias.value, 10);
@@ -2023,11 +2078,13 @@ cfgGuardar.addEventListener('click', async () => {
   cfgGuardar.disabled = true;
   cfgGuardar.textContent = 'Guardando...';
   try{
-    await db.collection('configuracion').doc('intervalos').set({ items, avisoKm: aKm, avisoDias: aDias });
+    await db.collection('configuracion').doc('intervalos').set({ items, avisoKm: aKm, avisoDias: aDias, tiposServicio: tipos });
     itemsConfig = items;
     avisoKm = aKm;
     avisoDias = aDias;
+    tiposServicio = tipos;
     actualizarListaItems();
+    actualizarListaTipos();
     cerrarConfigModal();
     render();
   }catch(err){
@@ -2152,7 +2209,7 @@ function procesarImport_(filas, ctx){
   filas[idxHead].forEach((h, i) => { const n = normTxt_(h); if(n && !(n in cols)) cols[n] = i; });
   const pick = (...nombres) => { for(const n of nombres){ if(n in cols) return cols[n]; } return -1; };
   const iFecha = pick('fecha'), iVeh = pick('vehiculo'), iTipo = pick('tipo de servicio', 'tipo'),
-        iTaller = pick('taller'), iItem = pick('item'), iConc = pick('concepto'),
+        iTaller = pick('taller'), iItem = pick('categoria', 'item'), iConc = pick('concepto'),
         iNotas = pick('comentarios', 'notas'), iKm = pick('kilometraje actual', 'kilometraje', 'km'),
         iPkm = pick('proximo kilometraje', 'proximo km'), iPf = pick('proximo por fecha', 'proxima fecha');
   const get = (f, i) => (i >= 0 && i < f.length) ? String(f[i]).trim() : '';
@@ -2391,8 +2448,8 @@ function renderVehiculos(filtro){
     const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
     const nombreAttr = escHtml_(v.nombre);
     const cant = v.items.length
-      ? `${v.items.length} ítem${v.items.length > 1 ? 's' : ''}`
-      : 'Sin ítems cargados';
+      ? `${v.items.length} categoría${v.items.length > 1 ? 's' : ''}`
+      : 'Sin categorías cargadas';
 
     const cabecera = `<tr class="cliente-row veh-row${abierto ? ' abierto' : ''}" data-vehiculo="${nombreAttr}">
       <td class="nombre"><div class="veh-nombre"><span class="chev" aria-hidden="true"></span><div><div>${nombreAttr}</div><div class="v-det">${cant}</div></div></div></td>
@@ -2410,7 +2467,7 @@ function renderVehiculos(filtro){
       <td class="estado"><div class="badges">${badgeHTML_(e.nivel)}</div><div class="v-det">${escHtml_(detalleVenc_(e))}</div></td>
     </tr>`;
         }).join('')
-      : `<tr class="item-vacio${ocultoCls}" data-padre="${nombreAttr}"><td colspan="3">Todavía no hay movimientos con "Ítem" para este vehículo.</td></tr>`;
+      : `<tr class="item-vacio${ocultoCls}" data-padre="${nombreAttr}"><td colspan="3">Todavía no hay movimientos con "Categoría" para este vehículo.</td></tr>`;
 
     return cabecera + hijos;
   }).join('');
@@ -2424,7 +2481,7 @@ function renderVehiculos(filtro){
           </colgroup>
           <thead>
             <tr>
-              <th class="nombre">Vehículo / ítem</th>
+              <th class="nombre">Vehículo / categoría</th>
               <th>Km / vence</th>
               <th>Estado</th>
             </tr>
@@ -2508,7 +2565,7 @@ function abrirFicha_(nombre){
     `<div class="ficha-km">Kilometraje actual: <strong>${formatKm(kmAct)}</strong></div>` +
     (items.length
       ? items.map(fichaItemHTML_).join('')
-      : '<div class="state-msg">Todavía no hay movimientos con "Ítem" para este vehículo.</div>');
+      : '<div class="state-msg">Todavía no hay movimientos con "Categoría" para este vehículo.</div>');
   fichaModal.classList.remove('hidden');
   posicionarNuevoBox(document.querySelector('#ficha-modal .nuevo-box'));
   fichaBody.scrollTop = 0;
@@ -2644,7 +2701,7 @@ importGuardar.addEventListener('click', async () => {
   }
 
   const conItem = res.nuevos.filter(r => r.item).length;
-  let msg = `Se van a importar ${res.nuevos.length} movimientos (${conItem} con ítem asignado).\n`;
+  let msg = `Se van a importar ${res.nuevos.length} movimientos (${conItem} con categoría asignada).\n`;
   if(res.vehiculosNuevos.length) msg += `Vehículos nuevos que se crean: ${res.vehiculosNuevos.join(', ')}.\n`;
   if(res.duplicados) msg += `Repetidos que se omiten: ${res.duplicados}.\n`;
   if(res.vacias) msg += `Filas sin concepto ni tipo que se omiten: ${res.vacias}.\n`;
