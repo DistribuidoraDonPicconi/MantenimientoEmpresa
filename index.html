@@ -454,6 +454,30 @@
   .fab-accion.registrar{ background:var(--verde); box-shadow:0 6px 16px rgba(31,138,76,0.4); }
   .fab-accion.km{ background:#3a7bd5; box-shadow:0 6px 16px rgba(58,123,213,0.4); }
   .fab-accion.ficha{ background:#16305c; box-shadow:0 6px 16px rgba(22,48,92,0.4); }
+  /* ===== Vehículos agrupables ===== */
+  table.clientes tr.oculto{ display:none; }
+  table.clientes tr.veh-row td{ background:#fff; }
+  table.clientes tr.veh-row td.nombre{ text-align:left; padding-left:10px; }
+  table.clientes tr.veh-row.abierto td{ border-bottom-color:var(--azul-borde); }
+  .veh-nombre{ display:flex; align-items:center; gap:8px; }
+  .veh-nombre .v-det{ margin-top:2px; font-weight:600; }
+  .chev{
+    flex:none; width:8px; height:8px; margin:0 4px 0 2px;
+    border-right:2.5px solid var(--azul); border-bottom:2.5px solid var(--azul);
+    transform:rotate(-45deg); transition:transform .15s;
+  }
+  tr.veh-row.abierto .chev{ transform:rotate(45deg); }
+  table.clientes tr.item-row td, table.clientes tr.item-vacio td{ background:#f7f9fd; }
+  table.clientes tr.item-row td.nombre{
+    text-align:left; padding-left:34px; font-size:14.5px; font-weight:700;
+    box-shadow:inset 5px 0 0 #c3cad9;
+  }
+  table.clientes tr.item-row.n3 td.nombre{ box-shadow:inset 5px 0 0 var(--rojo); }
+  table.clientes tr.item-row.n2 td.nombre{ box-shadow:inset 5px 0 0 #e0a100; }
+  table.clientes tr.item-row.n1 td.nombre{ box-shadow:inset 5px 0 0 var(--verde); }
+  table.clientes tr.item-vacio td{
+    text-align:left; padding-left:34px; font-size:13px; color:var(--texto-tenue); border-right:none;
+  }
 </style>
 </head>
 <body>
@@ -745,7 +769,6 @@
 
   <div class="pill-tabs">
     <button id="tab-vehiculos" data-tab="vehiculos" class="active">Vehículos</button>
-    <button id="tab-venc" data-tab="vencimientos">Vencimientos</button>
     <button id="tab-mov" data-tab="movimientos">Movimientos</button>
   </div>
 
@@ -1246,7 +1269,7 @@ function actualizarListaItems(){
 }
 
 /* ============== Scroll / tabs ============== */
-const scrollState = { vehiculos: 0, vencimientos: 0, movimientos: { top: 0, left: 0 } };
+const scrollState = { vehiculos: 0, movimientos: { top: 0, left: 0 } };
 let irAlFondoMovimientos = false;
 
 function guardarScrollActual(){
@@ -1287,11 +1310,8 @@ function render(){
   btnCompartir.classList.remove('hidden');
   headerTitle.textContent = TITULOS_TAB[currentTab];
   if(currentTab === 'vehiculos'){
-    searchEl.placeholder = 'Buscar vehículo...';
-    renderVehiculos(filtro);
-  }else if(currentTab === 'vencimientos'){
     searchEl.placeholder = 'Buscar vehículo o ítem...';
-    renderVencimientos(filtro);
+    renderVehiculos(filtro);
   }else{
     searchEl.placeholder = 'Buscar movimiento...';
     renderMovimientos(filtro);
@@ -1313,7 +1333,6 @@ function setTab(tab){
   guardarScrollActual();
   currentTab = tab;
   document.getElementById('tab-vehiculos').classList.toggle('active', tab === 'vehiculos');
-  document.getElementById('tab-venc').classList.toggle('active', tab === 'vencimientos');
   document.getElementById('tab-mov').classList.toggle('active', tab === 'movimientos');
   deseleccionarFila();
   render();
@@ -1326,7 +1345,6 @@ document.getElementById('tab-mov').addEventListener('click', () => setTab('movim
 btnRefresh.addEventListener('click', cargarDatos);
 searchEl.addEventListener('input', () => {
   scrollState.vehiculos = 0;
-  scrollState.vencimientos = 0;
   scrollState.movimientos = { top: 0, left: 0 };
   render();
 });
@@ -1458,6 +1476,7 @@ const fabCopiar = document.getElementById('fab-copiar');
 const fabEliminar = document.getElementById('fab-eliminar');
 let filaSeleccionadaId = null;
 let vehiculoSeleccionadoNombre = null;
+let vencSeleccionadaKey = null; // ítem seleccionado dentro de un vehículo
 
 // En la pestaña Movimientos, "copiar" duplica un movimiento. En la
 // pestaña Vehículos, ese mismo botón se reutiliza para saltar a ver
@@ -1486,38 +1505,37 @@ function aplicarPermisosUI(){
   const esVisitante = miRol === 'visitante';
   const admin = miRol === 'admin';
   const t = currentTab;
-  fabEditar.classList.toggle('hidden', !admin || t === 'vencimientos');
-  fabEliminar.classList.toggle('hidden', !admin || t === 'vencimientos');
-  fabCopiar.classList.toggle('hidden', t === 'vencimientos' || (esVisitante && t !== 'vehiculos'));
-  fabFicha.classList.toggle('hidden', t !== 'vehiculos');
-  fabKm.classList.toggle('hidden', t !== 'vehiculos' || esVisitante);
-  fabRegistrar.classList.toggle('hidden', t !== 'vencimientos' || esVisitante);
+  // En Vehículos se puede seleccionar un vehículo (editar, eliminar, km,
+  // ficha, ver movimientos) o un ítem de su lista (registrar servicio).
+  const itemSel = t === 'vehiculos' && !!vencSeleccionadaKey;
+  fabEditar.classList.toggle('hidden', !admin || itemSel);
+  fabEliminar.classList.toggle('hidden', !admin || itemSel);
+  fabCopiar.classList.toggle('hidden', itemSel || (esVisitante && t !== 'vehiculos'));
+  fabFicha.classList.toggle('hidden', t !== 'vehiculos' || itemSel);
+  fabKm.classList.toggle('hidden', t !== 'vehiculos' || esVisitante || itemSel);
+  fabRegistrar.classList.toggle('hidden', !itemSel || esVisitante);
   btnConfig.classList.toggle('hidden', !admin);
   fabNuevo.classList.toggle('hidden', esVisitante);
 }
 
 function actualizarSeleccionUI(){
   actualizarIconosFabAcciones();
-  aplicarPermisosUI();
   let haySeleccion = false;
   if(currentTab === 'vehiculos'){
-    let encontrada = false;
-    mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+    let vehEncontrado = false, itemEncontrado = false;
+    mainEl.querySelectorAll('tr.veh-row').forEach(tr => {
       const esta = tr.dataset.vehiculo === vehiculoSeleccionadoNombre;
       tr.classList.toggle('selected', esta);
-      if(esta) encontrada = true;
+      if(esta) vehEncontrado = true;
     });
-    if(vehiculoSeleccionadoNombre && !encontrada) vehiculoSeleccionadoNombre = null;
-    haySeleccion = !!vehiculoSeleccionadoNombre;
-  }else if(currentTab === 'vencimientos'){
-    let encontrada = false;
-    mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+    mainEl.querySelectorAll('tr.item-row').forEach(tr => {
       const esta = tr.dataset.key === vencSeleccionadaKey;
       tr.classList.toggle('selected', esta);
-      if(esta) encontrada = true;
+      if(esta) itemEncontrado = true;
     });
-    if(vencSeleccionadaKey && !encontrada) vencSeleccionadaKey = null;
-    haySeleccion = !!vencSeleccionadaKey;
+    if(vehiculoSeleccionadoNombre && !vehEncontrado) vehiculoSeleccionadoNombre = null;
+    if(vencSeleccionadaKey && !itemEncontrado) vencSeleccionadaKey = null;
+    haySeleccion = !!vehiculoSeleccionadoNombre || !!vencSeleccionadaKey;
   }else{
     let encontrada = false;
     mainEl.querySelectorAll('tr.mov-row').forEach(tr => {
@@ -1528,6 +1546,7 @@ function actualizarSeleccionUI(){
     if(filaSeleccionadaId && !encontrada) filaSeleccionadaId = null;
     haySeleccion = !!filaSeleccionadaId;
   }
+  aplicarPermisosUI();
   const soloLectura = miRol === 'visitante' && currentTab !== 'vehiculos';
   fabAcciones.classList.toggle('hidden', !haySeleccion || soloLectura);
 }
@@ -2304,7 +2323,7 @@ function badgeHTML_(nivel){
   return `<span class="badge ${CLASE_NIVEL_[nivel]}">${NOMBRE_NIVEL_[nivel]}</span>`;
 }
 
-const TITULOS_TAB = { vehiculos: 'Vehículos', vencimientos: 'Vencimientos', movimientos: 'Movimientos' };
+const TITULOS_TAB = { vehiculos: 'Vehículos', movimientos: 'Movimientos' };
 
 /* ---- Pestaña Vehículos ---- */
 function calcularResumenVehiculos(){
@@ -2316,7 +2335,7 @@ function calcularResumenVehiculos(){
       const venc = items.filter(e => e.nivel === 3).length;
       const warn = items.filter(e => e.nivel === 2).length;
       const ok = items.filter(e => e.nivel === 1).length;
-      return { nombre, km: kmActualDe_(nombre, ctx), venc, warn, ok, nivel: venc ? 3 : (warn ? 2 : (ok ? 1 : 0)) };
+      return { nombre, items, km: kmActualDe_(nombre, ctx), venc, warn, ok, nivel: venc ? 3 : (warn ? 2 : (ok ? 1 : 0)) };
     })
     .filter(v => v.nombre);
 }
@@ -2329,105 +2348,71 @@ function badgesVehiculoHTML_(v){
   return `<div class="badges">${b.join('')}</div>`;
 }
 
-function renderTablaVehiculos(lista, mensajeVacio){
-  ultimaListaVehiculosVisible = lista;
-
-  if(!lista.length){
-    mainEl.innerHTML = `<div class="state-msg">${mensajeVacio}</div>`;
-    return;
-  }
-
-  const filas = lista.map(v => {
-    const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
-    return `<tr class="cliente-row" data-vehiculo="${escHtml_(v.nombre)}">
-      <td class="nombre">${escHtml_(v.nombre)}</td>
-      <td class="km ${claseKm}">${formatKm(v.km)}</td>
-      <td class="estado">${badgesVehiculoHTML_(v)}</td>
-    </tr>`;
-  }).join('');
-
-  mainEl.innerHTML = `
-    <div class="stock-table-wrap">
-      <div class="clientes-scroll">
-        <table class="clientes">
-          <colgroup>
-            <col><col style="width:110px"><col style="width:132px">
-          </colgroup>
-          <thead>
-            <tr>
-              <th class="nombre">Vehículo</th>
-              <th>Km actual</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>${filas}</tbody>
-        </table>
-      </div>
-    </div>`;
-
-  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
-    tr.addEventListener('click', () => {
-      const nombre = tr.dataset.vehiculo;
-      vehiculoSeleccionadoNombre = (vehiculoSeleccionadoNombre === nombre) ? null : nombre;
-      actualizarSeleccionUI();
-    });
-  });
-  actualizarSeleccionUI();
-}
-
-function renderVehiculos(filtro){
-  const lista = calcularResumenVehiculos()
-    .filter(v => !filtro || v.nombre.toLowerCase().includes(filtro.toLowerCase()))
-    .sort((a, b) => (b.nivel - a.nivel) || a.nombre.localeCompare(b.nombre, 'es'));
-
-  renderTablaVehiculos(lista, 'Sin vehículos que coincidan.');
-}
-
-/* ---- Pestaña Vencimientos ---- */
+// Qué vehículos están desplegados (se conserva entre renders).
+const vehiculosExpandidos = new Set();
 let ultimaListaVenc = [];
-let vencSeleccionadaKey = null;
 
 function clavVenc_(e){ return e.vehiculo + '||' + e.item; }
 
-function todosLosVencimientos_(){
-  const ctx = ctxVenc_();
-  const out = [];
-  vehiculos.forEach(v => {
-    const nombre = String(v['Vehiculo'] || '').trim();
-    if(!nombre) return;
-    itemsDeVehiculo_(nombre, ctx).forEach(e => { if(e.nivel >= 1) out.push(e); });
-  });
-  return out.sort(ordenUrgencia_);
-}
-
-function renderVencimientos(filtro){
+function renderVehiculos(filtro){
   const f = (filtro || '').toLowerCase();
-  const lista = todosLosVencimientos_()
-    .filter(e => !f || `${e.vehiculo} ${e.item}`.toLowerCase().includes(f));
-  ultimaListaVenc = lista;
+  const todos = calcularResumenVehiculos()
+    .sort((a, b) => (b.nivel - a.nivel) || a.nombre.localeCompare(b.nombre, 'es'));
+
+  // Con búsqueda: coincide el vehículo (se muestran todos sus ítems) o
+  // coincide algún ítem (se muestran solo esos y el vehículo se abre).
+  const lista = [];
+  todos.forEach(v => {
+    const coincideNombre = !f || v.nombre.toLowerCase().includes(f);
+    const itemsVis = coincideNombre ? v.items : v.items.filter(e => e.item.toLowerCase().includes(f));
+    if(!coincideNombre && !itemsVis.length) return;
+    lista.push({ v, itemsVis, autoAbrir: !!f && !coincideNombre });
+  });
+
+  ultimaListaVehiculosVisible = lista.map(x => x.v);
+  ultimaListaVenc = lista.flatMap(x => x.itemsVis);
 
   if(!lista.length){
-    mainEl.innerHTML = `<div class="state-msg">${filtro
-      ? 'Sin vencimientos que coincidan.'
-      : 'Todavía no hay vencimientos. Cargá movimientos con "Ítem" (o importá tu Excel desde el engranaje) para verlos acá.'}</div>`;
+    mainEl.innerHTML = '<div class="state-msg">Sin vehículos que coincidan.</div>';
     return;
   }
 
-  const venc = lista.filter(e => e.nivel === 3).length;
-  const warn = lista.filter(e => e.nivel === 2).length;
-  const resumen = `<div class="venc-resumen">
-      ${venc ? `<span class="badge bad">${venc} vencido${venc > 1 ? 's' : ''}</span>` : ''}
-      ${warn ? `<span class="badge warn">${warn} por vencer</span>` : ''}
-      ${(!venc && !warn) ? '<span class="badge ok">Todo al día</span>' : ''}
-    </div>`;
+  const totVenc = lista.reduce((n, x) => n + x.itemsVis.filter(e => e.nivel === 3).length, 0);
+  const totWarn = lista.reduce((n, x) => n + x.itemsVis.filter(e => e.nivel === 2).length, 0);
+  const totOk = lista.reduce((n, x) => n + x.itemsVis.filter(e => e.nivel === 1).length, 0);
+  const resumen = (totVenc || totWarn || totOk) ? `<div class="venc-resumen">
+      ${totVenc ? `<span class="badge bad">${totVenc} vencido${totVenc > 1 ? 's' : ''}</span>` : ''}
+      ${totWarn ? `<span class="badge warn">${totWarn} por vencer</span>` : ''}
+      ${(!totVenc && !totWarn) ? '<span class="badge ok">Todo al día</span>' : ''}
+    </div>` : '';
 
-  const filas = lista.map(e => {
-    const vence = [e.pkm !== null ? formatKm(e.pkm) : '', e.pf ? formatFecha(e.pf) : ''].filter(Boolean).join('<br>');
-    return `<tr class="cliente-row" data-key="${escHtml_(clavVenc_(e))}">
-      <td class="nombre"><div class="v-veh">${escHtml_(e.vehiculo)}</div><div class="v-item">${escHtml_(e.item)}</div></td>
+  const filas = lista.map(({ v, itemsVis, autoAbrir }) => {
+    const abierto = autoAbrir || vehiculosExpandidos.has(v.nombre);
+    const claseKm = (v.km === null || v.km === undefined) ? 'zero' : '';
+    const nombreAttr = escHtml_(v.nombre);
+    const cant = v.items.length
+      ? `${v.items.length} ítem${v.items.length > 1 ? 's' : ''}`
+      : 'Sin ítems cargados';
+
+    const cabecera = `<tr class="cliente-row veh-row${abierto ? ' abierto' : ''}" data-vehiculo="${nombreAttr}">
+      <td class="nombre"><div class="veh-nombre"><span class="chev" aria-hidden="true"></span><div><div>${nombreAttr}</div><div class="v-det">${cant}</div></div></div></td>
+      <td class="km ${claseKm}">${formatKm(v.km)}</td>
+      <td class="estado">${badgesVehiculoHTML_(v)}</td>
+    </tr>`;
+
+    const ocultoCls = abierto ? '' : ' oculto';
+    const hijos = itemsVis.length
+      ? itemsVis.map(e => {
+          const vence = [e.pkm !== null ? formatKm(e.pkm) : '', e.pf ? formatFecha(e.pf) : ''].filter(Boolean).join('<br>');
+          return `<tr class="cliente-row item-row n${e.nivel}${ocultoCls}" data-padre="${nombreAttr}" data-key="${escHtml_(clavVenc_(e))}">
+      <td class="nombre"><div class="v-item-n">${escHtml_(e.item)}</div></td>
       <td><div class="v-vence">${vence || '-'}</div></td>
       <td class="estado"><div class="badges">${badgeHTML_(e.nivel)}</div><div class="v-det">${escHtml_(detalleVenc_(e))}</div></td>
     </tr>`;
+        }).join('')
+      : `<tr class="item-vacio${ocultoCls}" data-padre="${nombreAttr}"><td colspan="3">Todavía no hay movimientos con "Ítem" para este vehículo.</td></tr>`;
+
+    return cabecera + hijos;
   }).join('');
 
   mainEl.innerHTML = `${resumen}
@@ -2440,7 +2425,7 @@ function renderVencimientos(filtro){
           <thead>
             <tr>
               <th class="nombre">Vehículo / ítem</th>
-              <th>Vence</th>
+              <th>Km / vence</th>
               <th>Estado</th>
             </tr>
           </thead>
@@ -2449,10 +2434,29 @@ function renderVencimientos(filtro){
       </div>
     </div>`;
 
-  mainEl.querySelectorAll('tr.cliente-row').forEach(tr => {
+  // Tocar un vehículo lo despliega (y lo selecciona para editar, km, etc.);
+  // tocarlo de nuevo lo pliega.
+  mainEl.querySelectorAll('tr.veh-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const nombre = tr.dataset.vehiculo;
+      const abrir = !tr.classList.contains('abierto');
+      if(abrir) vehiculosExpandidos.add(nombre); else vehiculosExpandidos.delete(nombre);
+      tr.classList.toggle('abierto', abrir);
+      mainEl.querySelectorAll('tr.item-row, tr.item-vacio').forEach(r => {
+        if(r.dataset.padre === nombre) r.classList.toggle('oculto', !abrir);
+      });
+      vehiculoSeleccionadoNombre = abrir ? nombre : null;
+      vencSeleccionadaKey = null;
+      actualizarSeleccionUI();
+    });
+  });
+
+  // Tocar un ítem lo selecciona para registrar el servicio.
+  mainEl.querySelectorAll('tr.item-row').forEach(tr => {
     tr.addEventListener('click', () => {
       const key = tr.dataset.key;
       vencSeleccionadaKey = (vencSeleccionadaKey === key) ? null : key;
+      vehiculoSeleccionadoNombre = null;
       actualizarSeleccionUI();
     });
   });
@@ -2463,8 +2467,6 @@ function renderVencimientos(filtro){
 const fabFicha = document.getElementById('fab-ficha');
 const fabKm = document.getElementById('fab-km');
 const fabRegistrar = document.getElementById('fab-registrar');
-
-document.getElementById('tab-venc').addEventListener('click', () => setTab('vencimientos'));
 
 fabRegistrar.addEventListener('click', () => {
   if(miRol === 'visitante') return;
