@@ -318,6 +318,18 @@
     background:#fff; font-size:16px; outline:none; color:#1a1f2b;
   }
   .nuevo-body input:focus{ border-color:var(--azul); }
+  .nuevo-body select{
+    display:block; width:100%; padding:12px 34px 12px 34px; border-radius:12px;
+    border:1px solid var(--azul-borde); background-color:#fff; color:#1a1f2b;
+    font-size:16px; font-family:inherit; outline:none; cursor:pointer;
+    -webkit-appearance:none; appearance:none;
+    text-align:center; text-align-last:center; text-overflow:ellipsis;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232a5cc9' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; background-size:16px;
+  }
+  .nuevo-body select:focus{ border-color:var(--azul); }
+  .nuevo-body select.vacio{ color:#a7b2c6; }
+  .nuevo-body select option{ color:#1a1f2b; background:#fff; }
   .nuevo-body input[readonly]{ background:#f4f7fc; color:var(--texto-tenue); }
   .nuevo-body textarea{
     display:block; width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--azul-borde);
@@ -622,10 +634,9 @@
         </div>
         <div>
           <label for="nm-vehiculo">Vehículo</label>
-          <input type="text" id="nm-vehiculo" placeholder="Ej: Ford Cargo 1517" list="lista-vehiculos" autocomplete="off">
+          <select id="nm-vehiculo"></select>
         </div>
       </div>
-      <datalist id="lista-vehiculos"></datalist>
 
       <div class="nm-fecha-cliente-grid">
         <div>
@@ -634,11 +645,10 @@
         </div>
         <div>
           <label for="nm-item">Categoría</label>
-          <input type="text" id="nm-item" placeholder="Ej: Service" list="lista-items" autocomplete="off">
+          <select id="nm-item"></select>
         </div>
       </div>
       <datalist id="lista-talleres"></datalist>
-      <datalist id="lista-items"></datalist>
 
       <div class="nm-concepto-km-grid">
         <div>
@@ -1286,8 +1296,7 @@ function renderMovimientos(filtro){
 function actualizarListaVehiculos(){
   const nombres = vehiculos.map(v => String(v['Vehiculo']||'').trim()).filter(Boolean)
     .sort((a,b) => a.localeCompare(b, 'es'));
-  document.getElementById('lista-vehiculos').innerHTML =
-    nombres.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+  llenarSelect_(document.getElementById('nm-vehiculo'), nombres, 'Elegí un vehículo');
 
   const talleres = [...new Set(movimientos.map(m => String(m['Taller']||'').trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, 'es'));
@@ -1297,8 +1306,36 @@ function actualizarListaVehiculos(){
 
 function actualizarListaItems(){
   const nombres = itemsConfig.map(i => i.nombre).sort((a,b) => a.localeCompare(b, 'es'));
-  document.getElementById('lista-items').innerHTML =
-    nombres.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+  llenarSelect_(document.getElementById('nm-item'), nombres, 'Sin categoría');
+}
+
+// Rellena un <select> con las opciones dadas (más una opción vacía al
+// principio) y conserva la selección actual.
+function llenarSelect_(sel, valores, textoVacio){
+  const actual = sel.value;
+  sel.innerHTML = '';
+  const vacio = document.createElement('option');
+  vacio.value = ''; vacio.textContent = textoVacio;
+  sel.appendChild(vacio);
+  valores.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+  setSelectValor_(sel, actual);
+}
+
+// Selecciona un valor; si ya no está entre las opciones (por ejemplo una
+// categoría que se quitó de la configuración), lo agrega para no perderlo.
+function setSelectValor_(sel, valor){
+  const v = String(valor == null ? '' : valor).trim();
+  if(v && ![...sel.options].some(o => o.value === v)){
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  }
+  sel.value = v;
+  sel.classList.toggle('vacio', !sel.value);
 }
 
 
@@ -1643,7 +1680,8 @@ function recalcularProximos(){
   nmProxFecha.value = (it.meses && nmFecha.value) ? sumarMeses_(nmFecha.value, it.meses) : '';
 }
 
-nmItem.addEventListener('input', recalcularProximos);
+nmItem.addEventListener('change', () => { nmItem.classList.toggle('vacio', !nmItem.value); recalcularProximos(); });
+nmVehiculo.addEventListener('change', () => { nmVehiculo.classList.toggle('vacio', !nmVehiculo.value); });
 nmKm.addEventListener('input', recalcularProximos);
 nmFecha.addEventListener('change', recalcularProximos);
 nmProxKm.addEventListener('input', () => { nmProxKm.value = formatearKm(nmProxKm.value); proximoManual = true; });
@@ -1661,7 +1699,7 @@ function abrirNuevoModal(mov, modoEditar, modoRegistrar){
   nmEditId.value = (precargar && modoEditar) ? (mov['ID'] || '') : '';
   nuevoTitulo.textContent = modoEditar ? 'Editar movimiento' : (modoRegistrar ? 'Registrar servicio' : (precargar ? 'Copiar movimiento' : 'Nuevo movimiento'));
 
-  nmVehiculo.value = precargar ? (mov['Vehiculo'] || '') : '';
+  setSelectValor_(nmVehiculo, precargar ? (mov['Vehiculo'] || '') : '');
   nmFecha.value = precargar && mov[CONFIG.CAMPO_FECHA]
     ? fechaLocalInput(parsearFechaLocal_(mov[CONFIG.CAMPO_FECHA]))
     : fechaLocalInput(new Date());
@@ -1671,7 +1709,7 @@ function abrirNuevoModal(mov, modoEditar, modoRegistrar){
   nmKm.value = precargar ? numeroKmAInputStr(mov['Kilometraje']) : '';
   nmNotas.value = precargar ? (mov['Notas'] || '') : '';
 
-  nmItem.value = precargar ? (mov['Item'] || '') : '';
+  setSelectValor_(nmItem, precargar ? (mov['Item'] || '') : '');
   if(precargar && modoEditar){
     // Al editar se muestran los valores ya guardados; solo se recalculan
     // si la persona cambia el ítem, el km o la fecha.
