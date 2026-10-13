@@ -322,7 +322,7 @@
   .nuevo-body textarea{
     display:block; width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--azul-borde);
     background:#fff; font-size:16px; outline:none; color:#1a1f2b; font-family:inherit;
-    resize:vertical; text-align:left;
+    resize:none; text-align:left;
   }
   .nuevo-body textarea:focus{ border-color:var(--azul); }
 
@@ -628,9 +628,18 @@
       </div>
       <datalist id="lista-vehiculos"></datalist>
 
-      <label for="nm-taller">Taller</label>
-      <input type="text" id="nm-taller" placeholder="Ej: Taller Gómez" list="lista-talleres" autocomplete="off">
+      <div class="nm-fecha-cliente-grid">
+        <div>
+          <label for="nm-taller">Taller</label>
+          <input type="text" id="nm-taller" placeholder="Ej: Taller Gómez" list="lista-talleres" autocomplete="off">
+        </div>
+        <div>
+          <label for="nm-item">Categoría</label>
+          <input type="text" id="nm-item" placeholder="Ej: Service" list="lista-items" autocomplete="off">
+        </div>
+      </div>
       <datalist id="lista-talleres"></datalist>
+      <datalist id="lista-items"></datalist>
 
       <div class="nm-concepto-km-grid">
         <div>
@@ -642,10 +651,6 @@
           <input type="text" inputmode="numeric" id="nm-km" placeholder="0 km">
         </div>
       </div>
-
-      <label for="nm-item">Categoría (para calcular el próximo vencimiento)</label>
-      <input type="text" id="nm-item" placeholder="Ej: Service" list="lista-items" autocomplete="off">
-      <datalist id="lista-items"></datalist>
 
       <div class="nm-servicio-grid">
         <div>
