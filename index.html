@@ -345,11 +345,13 @@
   .nm-concepto-km-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .nm-concepto-km-grid label{ margin-top:0; }
 
+  .nm-fecha-cliente-grid, .nm-concepto-km-grid{ margin-bottom:18px; }
+  .nm-servicio-grid{ margin-bottom:2px; }
   #nuevo-modal .nuevo-body label{ text-align:center; }
   #nuevo-modal .nuevo-body input[type="text"],
   #nuevo-modal .nuevo-body input[type="date"]{ text-align:center; }
   .nuevo-body label[for="nm-notas"],
-  .nuevo-body label[for="nm-email"]{ margin-top:8px; }
+  .nuevo-body label[for="nm-email"]{ margin-top:18px; }
 
   .nuevo-hint{ font-size:12.5px; color:var(--texto-tenue); margin-top:6px; line-height:1.4; }
 
@@ -396,6 +398,7 @@
   .cfg-head{ font-size:11.5px; font-weight:800; color:var(--texto-tenue); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; padding:0 2px; }
   .cfg-head span:nth-child(2), .cfg-head span:nth-child(3){ text-align:center; }
   .cfg-row{ margin-bottom:8px; }
+  .cfg-row.cfg-row-taller{ grid-template-columns:1fr 34px; }
   .cfg-row input{
     width:100%; padding:10px 9px; border-radius:10px; border:1px solid var(--azul-borde);
     background:#fff; font-size:15px; outline:none; color:#1a1f2b; min-width:0;
@@ -641,14 +644,13 @@
       <div class="nm-fecha-cliente-grid">
         <div>
           <label for="nm-taller">Taller</label>
-          <input type="text" id="nm-taller" placeholder="Ej: Taller Gómez" list="lista-talleres" autocomplete="off">
+          <select id="nm-taller"></select>
         </div>
         <div>
           <label for="nm-item">Categoría</label>
           <select id="nm-item"></select>
         </div>
       </div>
-      <datalist id="lista-talleres"></datalist>
 
       <div class="nm-concepto-km-grid">
         <div>
@@ -732,6 +734,11 @@
       <div class="cfg-head"><span>Categoría</span><span>Cada (km)</span><span>Meses</span><span></span></div>
       <div id="cfg-lista"></div>
       <button class="cfg-add" id="cfg-agregar">+ Agregar categoría</button>
+
+      <div class="cfg-sec">Talleres</div>
+      <p class="cfg-intro">Son los talleres que vas a poder elegir en el campo "Taller" al cargar un movimiento.</p>
+      <div id="cfg-talleres-lista"></div>
+      <button class="cfg-add" id="cfg-agregar-taller">+ Agregar taller</button>
 
       <div class="cfg-sec">Avisos</div>
       <p class="cfg-intro">Una categoría pasa a "Por vencer" (amarillo) cuando falta menos que esto. Al pasarse del km o de la fecha, queda "Vencido" (rojo).</p>
@@ -1128,6 +1135,7 @@ async function eliminarVehiculoFirestore_(nombreIn){
 let movimientos = [];
 let vehiculos = [];
 let itemsConfig = []; // [{ nombre, km, meses }] guardado en configuracion/intervalos
+let talleresConfig = null; // [nombre] guardado en configuracion/intervalos (null = nunca configurado)
 let avisoKm = 1000;   // "por vencer" cuando faltan menos de estos km
 let avisoDias = 30;   // ... o menos de estos días
 let currentTab = 'vehiculos';
@@ -1198,6 +1206,9 @@ async function cargarDatos(){
           meses: Number(i.meses) || 0
         })).filter(i => i.nombre)
       : [];
+    talleresConfig = (cfgSnap && cfgSnap.exists && Array.isArray(cfgSnap.data().talleres))
+      ? cfgSnap.data().talleres.map(t => String(t || '').trim()).filter(Boolean)
+      : null;
     {
       const cfg = (cfgSnap && cfgSnap.exists) ? cfgSnap.data() : {};
       avisoKm = (cfg.avisoKm === undefined || cfg.avisoKm === null || isNaN(Number(cfg.avisoKm))) ? 1000 : Number(cfg.avisoKm);
@@ -1205,6 +1216,7 @@ async function cargarDatos(){
     }
     actualizarListaVehiculos();
     actualizarListaItems();
+    actualizarListaTalleres();
     if(currentTab === 'movimientos') irAlFondoMovimientos = true;
     render();
   }catch(err){
@@ -1297,11 +1309,19 @@ function actualizarListaVehiculos(){
   const nombres = vehiculos.map(v => String(v['Vehiculo']||'').trim()).filter(Boolean)
     .sort((a,b) => a.localeCompare(b, 'es'));
   llenarSelect_(document.getElementById('nm-vehiculo'), nombres, 'Elegí un vehículo');
+}
 
-  const talleres = [...new Set(movimientos.map(m => String(m['Taller']||'').trim()).filter(Boolean))]
-    .sort((a,b) => a.localeCompare(b, 'es'));
-  document.getElementById('lista-talleres').innerHTML =
-    talleres.map(t => `<option value="${t.replace(/"/g,'&quot;')}">`).join('');
+// Talleres disponibles: los de Configuración. Mientras nadie los haya
+// configurado, se usan los que ya aparecen en movimientos cargados.
+function talleresDisponibles_(){
+  const base = talleresConfig !== null
+    ? talleresConfig
+    : movimientos.map(m => String(m['Taller'] || '').trim()).filter(Boolean);
+  return [...new Set(base)].sort((a,b) => a.localeCompare(b, 'es'));
+}
+
+function actualizarListaTalleres(){
+  llenarSelect_(document.getElementById('nm-taller'), talleresDisponibles_(), 'Elegí un taller');
 }
 
 function actualizarListaItems(){
@@ -1682,6 +1702,7 @@ function recalcularProximos(){
 
 nmItem.addEventListener('change', () => { nmItem.classList.toggle('vacio', !nmItem.value); recalcularProximos(); });
 nmVehiculo.addEventListener('change', () => { nmVehiculo.classList.toggle('vacio', !nmVehiculo.value); });
+nmTaller.addEventListener('change', () => { nmTaller.classList.toggle('vacio', !nmTaller.value); });
 nmKm.addEventListener('input', recalcularProximos);
 nmFecha.addEventListener('change', recalcularProximos);
 nmProxKm.addEventListener('input', () => { nmProxKm.value = formatearKm(nmProxKm.value); proximoManual = true; });
@@ -1704,7 +1725,7 @@ function abrirNuevoModal(mov, modoEditar, modoRegistrar){
     ? fechaLocalInput(parsearFechaLocal_(mov[CONFIG.CAMPO_FECHA]))
     : fechaLocalInput(new Date());
 
-  nmTaller.value = precargar ? (mov['Taller'] || '') : '';
+  setSelectValor_(nmTaller, precargar ? (mov['Taller'] || '') : '');
   nmConcepto.value = precargar ? (mov['Concepto'] || '') : '';
   nmKm.value = precargar ? numeroKmAInputStr(mov['Kilometraje']) : '';
   nmNotas.value = precargar ? (mov['Notas'] || '') : '';
@@ -1985,6 +2006,7 @@ btnGuardar.addEventListener('click', async () => {
 /* ============== Configuración: intervalos por ítem ============== */
 const configModal = document.getElementById('config-modal');
 const cfgLista = document.getElementById('cfg-lista');
+const cfgTalleresLista = document.getElementById('cfg-talleres-lista');
 const cfgError = document.getElementById('cfg-error');
 const cfgGuardar = document.getElementById('cfg-guardar');
 const cfgAvisoKm = document.getElementById('cfg-aviso-km');
@@ -2034,11 +2056,32 @@ function agregarFilaConfig(it){
   return fila;
 }
 
+function agregarFilaTaller(nombre){
+  const fila = document.createElement('div');
+  fila.className = 'cfg-row cfg-row-taller';
+
+  const inNombre = document.createElement('input');
+  inNombre.type = 'text'; inNombre.className = 'cfg-taller-nombre';
+  inNombre.placeholder = 'Ej: Taller Gómez'; inNombre.autocomplete = 'off';
+  inNombre.value = nombre || '';
+
+  const btnDel = document.createElement('button');
+  btnDel.type = 'button'; btnDel.className = 'cfg-del'; btnDel.textContent = '×';
+  btnDel.setAttribute('aria-label', 'Quitar taller');
+  btnDel.addEventListener('click', () => fila.remove());
+
+  fila.append(inNombre, btnDel);
+  cfgTalleresLista.appendChild(fila);
+  return fila;
+}
+
 function abrirConfigModal(){
   if(miRol !== 'admin') return;
   cfgLista.innerHTML = '';
   const base = itemsConfig.length ? itemsConfig : ITEMS_SUGERIDOS;
   base.forEach(agregarFilaConfig);
+  cfgTalleresLista.innerHTML = '';
+  talleresDisponibles_().forEach(agregarFilaTaller);
   cfgAvisoKm.value = nfmt_(avisoKm);
   cfgAvisoDias.value = String(avisoDias);
   cfgError.textContent = '';
@@ -2062,6 +2105,11 @@ document.getElementById('cfg-agregar').addEventListener('click', () => {
   document.querySelector('#config-modal .nuevo-body').scrollTop = 99999;
 });
 
+document.getElementById('cfg-agregar-taller').addEventListener('click', () => {
+  const fila = agregarFilaTaller('');
+  fila.querySelector('.cfg-taller-nombre').focus();
+});
+
 cfgGuardar.addEventListener('click', async () => {
   cfgError.textContent = '';
   if(miRol !== 'admin'){
@@ -2083,6 +2131,16 @@ cfgGuardar.addEventListener('click', async () => {
     items.push({ nombre, km, meses });
   }
 
+  const talleres = [];
+  const talleresVistos = new Set();
+  for(const inp of cfgTalleresLista.querySelectorAll('.cfg-taller-nombre')){
+    const t = inp.value.trim();
+    if(!t) continue; // filas vacías se ignoran
+    if(talleresVistos.has(t.toLowerCase())){ cfgError.textContent = `El taller "${t}" está repetido.`; return; }
+    talleresVistos.add(t.toLowerCase());
+    talleres.push(t);
+  }
+
   const nuevoAvisoKm = parseInt(limpiarKmParaEnvio(cfgAvisoKm.value), 10);
   const nuevoAvisoDias = parseInt(cfgAvisoDias.value, 10);
   const aKm = isNaN(nuevoAvisoKm) ? 1000 : nuevoAvisoKm;
@@ -2091,11 +2149,13 @@ cfgGuardar.addEventListener('click', async () => {
   cfgGuardar.disabled = true;
   cfgGuardar.textContent = 'Guardando...';
   try{
-    await db.collection('configuracion').doc('intervalos').set({ items, avisoKm: aKm, avisoDias: aDias });
+    await db.collection('configuracion').doc('intervalos').set({ items, talleres, avisoKm: aKm, avisoDias: aDias });
     itemsConfig = items;
+    talleresConfig = talleres;
     avisoKm = aKm;
     avisoDias = aDias;
     actualizarListaItems();
+    actualizarListaTalleres();
     cerrarConfigModal();
     render();
   }catch(err){
