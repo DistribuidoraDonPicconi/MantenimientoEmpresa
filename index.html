@@ -329,6 +329,40 @@
   }
   .nuevo-body select:focus{ border-color:var(--azul); }
   .nuevo-body select.vacio{ color:#a7b2c6; }
+  /* Selects convertidos en campo escribible + lista desplegable filtrada */
+  .nuevo-body select.combo-oculto{ display:none; }
+  .combo{ position:relative; }
+  .nuevo-body .combo input[type="text"]{ padding-left:38px; padding-right:38px; }
+  .combo input::placeholder{ color:#a7b2c6; }
+  .combo-toggle{
+    position:absolute; top:0; right:0; height:100%; width:38px; border:none; background:none;
+    color:var(--azul); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+  }
+  .combo-toggle svg{ width:16px; height:16px; transition:transform .15s ease; }
+  .combo.abierto .combo-toggle svg{ transform:rotate(180deg); }
+  .combo.abierto input{ border-color:var(--azul); }
+  .combo-list{
+    position:absolute; z-index:20; top:calc(100% + 6px); left:0;
+    min-width:100%; width:max-content; max-width:min(320px, calc(100vw - 64px));
+    max-height:148px; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    margin:0; padding:5px; list-style:none;
+    background:#fff; border:1px solid var(--azul-borde); border-radius:12px;
+    box-shadow:0 10px 26px rgba(17,22,36,0.18);
+  }
+  /* En la columna derecha la lista se abre hacia la izquierda para no salirse de la ventana */
+  .nm-fecha-cliente-grid > div:last-child .combo-list,
+  .nm-servicio-grid > div:last-child .combo-list,
+  .nm-concepto-km-grid > div:last-child .combo-list{ left:auto; right:0; }
+  .combo-list[hidden]{ display:none; }
+  .combo-list li{
+    box-sizing:border-box; height:40px; line-height:20px; padding:10px 12px; border-radius:8px;
+    font-size:15.5px; font-weight:600; color:#1a1f2b; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .combo-list li b{ font-weight:800; color:var(--azul); }
+  .combo-list li.actual{ color:var(--azul); font-weight:800; }
+  .combo-list li.activo{ background:var(--azul-suave); color:var(--azul-osc); }
+  .combo-list li.vacio{ color:var(--texto-tenue); font-weight:500; font-size:14px; cursor:default; white-space:normal; height:auto; line-height:1.35; }
   .nuevo-body select option{ color:#1a1f2b; background:#fff; }
   .nuevo-body input[readonly]{ background:#f4f7fc; color:var(--texto-tenue); }
   .nuevo-body textarea{
@@ -1356,6 +1390,7 @@ function setSelectValor_(sel, valor){
   }
   sel.value = v;
   sel.classList.toggle('vacio', !sel.value);
+  if(sel._comboSync) sel._comboSync();
 }
 
 
@@ -1703,6 +1738,176 @@ function recalcularProximos(){
 nmItem.addEventListener('change', () => { nmItem.classList.toggle('vacio', !nmItem.value); recalcularProximos(); });
 nmVehiculo.addEventListener('change', () => { nmVehiculo.classList.toggle('vacio', !nmVehiculo.value); });
 nmTaller.addEventListener('change', () => { nmTaller.classList.toggle('vacio', !nmTaller.value); });
+
+/* ============== Combos: Vehículo / Taller / Categoría ==============
+   Cada <select> sigue existiendo (oculto) y manda como siempre: todo el
+   resto de la app lee y escribe su .value. Encima se muestra un campo
+   donde se puede escribir y una lista que se filtra mientras se tipea.
+   Solo se aceptan opciones que existan en la lista. */
+function normBusqueda_(t){
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+function escHtmlCombo_(t){
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function initCombo_(sel, opts){
+  opts = opts || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'combo';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = sel.id + '-combo';
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-expanded', 'false');
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'combo-toggle';
+  toggle.tabIndex = -1;
+  toggle.setAttribute('aria-label', 'Ver opciones');
+  toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const lista = document.createElement('ul');
+  lista.className = 'combo-list';
+  lista.setAttribute('role', 'listbox');
+  lista.hidden = true;
+
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(input);
+  wrap.appendChild(toggle);
+  wrap.appendChild(lista);
+  wrap.appendChild(sel);
+  sel.classList.add('combo-oculto');
+  const label = document.querySelector('label[for="' + sel.id + '"]');
+  if(label) label.setAttribute('for', input.id);
+
+  let items = [];
+  let idx = -1;
+  let dirty = false; // true cuando la persona tipeó (recién ahí se filtra)
+
+  const abierto = () => !lista.hidden;
+
+  function sync(){
+    const o = sel.options[sel.selectedIndex];
+    input.value = (o && o.value !== '') ? o.textContent : '';
+    const vacio = [...sel.options].find(x => x.value === '');
+    input.placeholder = vacio ? vacio.textContent : '';
+  }
+  sel._comboSync = sync;
+
+  function opciones(){
+    return [...sel.options]
+      .filter(o => o.value !== '' || opts.incluirVacio)
+      .map(o => ({ valor: o.value, texto: o.textContent }));
+  }
+
+  function cambiar(valor){
+    if(sel.value === valor) return;
+    sel.value = valor;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function render(){
+    const todas = opciones();
+    const q = dirty ? normBusqueda_(input.value) : '';
+    let l = q ? todas.filter(o => normBusqueda_(o.texto).includes(q)) : todas;
+    if(q){
+      l = l.filter(o => normBusqueda_(o.texto).startsWith(q))
+        .concat(l.filter(o => !normBusqueda_(o.texto).startsWith(q)));
+    }
+    items = l;
+    idx = -1;
+    if(!l.length){
+      lista.innerHTML = '<li class="vacio">Sin coincidencias.</li>';
+      return;
+    }
+    lista.innerHTML = l.map((o, i) => {
+      let html = escHtmlCombo_(o.texto);
+      if(q){
+        const n = normBusqueda_(o.texto);
+        const pos = n.indexOf(q);
+        if(pos >= 0 && n.length === o.texto.length){
+          html = escHtmlCombo_(o.texto.slice(0, pos)) + '<b>' + escHtmlCombo_(o.texto.slice(pos, pos + q.length)) + '</b>' + escHtmlCombo_(o.texto.slice(pos + q.length));
+        }
+      }
+      const actual = (o.valor === sel.value) && !q;
+      return '<li role="option" data-i="' + i + '"' + (actual ? ' class="actual"' : '') + '>' + html + '</li>';
+    }).join('');
+  }
+
+  function abrir(){
+    render();
+    lista.hidden = false;
+    wrap.classList.add('abierto');
+    input.setAttribute('aria-expanded', 'true');
+    const act = lista.querySelector('li.actual');
+    if(act) lista.scrollTop = Math.max(0, act.offsetTop - 5);
+  }
+  function cerrar(){
+    lista.hidden = true;
+    wrap.classList.remove('abierto');
+    input.setAttribute('aria-expanded', 'false');
+    idx = -1;
+  }
+  function marcar(i){
+    const lis = lista.querySelectorAll('li[data-i]');
+    if(!lis.length) return;
+    idx = (i + lis.length) % lis.length;
+    lis.forEach((li, k) => li.classList.toggle('activo', k === idx));
+    lis[idx].scrollIntoView({ block: 'nearest' });
+  }
+  function elegir(valor){
+    cambiar(valor);
+    sync();
+    cerrar();
+    input.blur(); // baja el teclado para ver el resultado
+  }
+  // Al salir del campo: si lo escrito coincide exactamente con una opción
+  // se toma; si quedó vacío se limpia la selección; si no, vuelve a lo elegido.
+  function confirmar(){
+    const t = normBusqueda_(input.value);
+    if(!t){
+      cambiar('');
+    }else{
+      const o = opciones().find(x => normBusqueda_(x.texto) === t);
+      if(o) cambiar(o.valor);
+    }
+    sync();
+  }
+
+  input.addEventListener('focus', () => { dirty = false; abrir(); try{ input.select(); }catch(e){} });
+  input.addEventListener('click', () => { if(!abierto()){ dirty = false; abrir(); } });
+  input.addEventListener('input', () => { dirty = true; if(!abierto()) abrir(); else render(); });
+  input.addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown'){ e.preventDefault(); if(!abierto()) abrir(); marcar(idx + 1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); if(abierto()) marcar(idx - 1); }
+    else if(e.key === 'Enter'){
+      if(abierto() && idx >= 0){ e.preventDefault(); elegir(items[idx].valor); }
+      else if(abierto() && dirty && items.length === 1){ e.preventDefault(); elegir(items[0].valor); }
+    }
+    else if(e.key === 'Escape' && abierto()){ e.stopPropagation(); cerrar(); }
+    else if(e.key === 'Tab'){ cerrar(); }
+  });
+  input.addEventListener('blur', () => { confirmar(); setTimeout(cerrar, 120); });
+
+  // mousedown con preventDefault: el campo no pierde el foco antes de
+  // registrar el toque en una opción o en la flechita.
+  [lista, toggle].forEach(el => el.addEventListener('mousedown', e => e.preventDefault()));
+  lista.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if(li) elegir(items[parseInt(li.dataset.i, 10)].valor);
+  });
+  toggle.addEventListener('click', () => {
+    if(abierto()){ cerrar(); }
+    else { dirty = false; input.focus(); abrir(); }
+  });
+
+  sync();
+}
+
+initCombo_(nmVehiculo);
+initCombo_(nmTaller);
+initCombo_(nmItem, { incluirVacio: true });
 nmKm.addEventListener('input', recalcularProximos);
 nmFecha.addEventListener('change', recalcularProximos);
 nmProxKm.addEventListener('input', () => { nmProxKm.value = formatearKm(nmProxKm.value); proximoManual = true; });
@@ -1805,7 +2010,10 @@ function liberarLockActivo(){
 }
 
 function posicionarNuevoBox(box){
-  const offset = Math.round(searchWrapEl.getBoundingClientRect().bottom) + 10;
+  // La ventana arranca justo debajo de las pestañas principales,
+  // tapando el buscador de cada pestaña.
+  const tabsEl = document.querySelector('.pill-tabs');
+  const offset = Math.round(tabsEl.getBoundingClientRect().bottom) + 10;
   box.style.marginTop = offset + 'px';
   box.style.maxHeight = `calc(100vh - ${offset}px - 16px)`;
 }
